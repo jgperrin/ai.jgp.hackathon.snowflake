@@ -45,8 +45,9 @@ function table(name: string, rowCount: number | null, comment: string | null, sp
 }
 
 const DATABASES: Database[] = [
-  { name: 'FINSERV_DW', comment: 'Financial services data warehouse (sample)' },
-  { name: 'MARKETING_DB', comment: 'Campaigns and web analytics (sample)' },
+  { name: 'FINSERV_DW', comment: 'Financial services data warehouse (sample)', system: false },
+  { name: 'MARKETING_DB', comment: 'Campaigns and web analytics (sample)', system: false },
+  { name: 'ORGDATACLOUD$INTERNAL$OS_BUILDING_SAMPLE_DATA', comment: null, system: true },
 ]
 
 const SCHEMAS: Record<string, Schema[]> = {
@@ -58,6 +59,7 @@ const SCHEMAS: Record<string, Schema[]> = {
     { name: 'ANALYTICS', comment: 'Curated reporting views' },
   ],
   MARKETING_DB: [{ name: 'CAMPAIGNS', comment: 'Campaign performance' }],
+  ORGDATACLOUD$INTERNAL$OS_BUILDING_SAMPLE_DATA: [],
 }
 
 const TABLES: Record<string, Table[]> = {

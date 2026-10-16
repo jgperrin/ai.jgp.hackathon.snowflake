@@ -6,6 +6,8 @@
 export interface Database {
   name: string
   comment: string | null
+  /** Snowflake's own database (SNOWFLAKE, ORGDATACLOUD$*, USERS$*…); the backend owns the rule. */
+  system: boolean
 }
 
 export interface Schema {
