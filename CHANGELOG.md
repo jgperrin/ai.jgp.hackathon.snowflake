@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.31] - 2026-10-16
+
+### Fixed
+- `deploy/README.md` claimed the Snowflake credentials were placeholders and that
+  every data call returns 502 (DIND#83). They are live as of 2026-10-16 — the
+  demo profile is seeded and catalog browse and Cortex both return real data.
+  Also folds the duplicate `## Outstanding` section into "Known state".
+
+### Note
+- No artifact change: documentation only.
+
 ## [0.10.30] - 2026-10-16
 
 ### Added

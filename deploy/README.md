@@ -95,9 +95,13 @@ ssh api 'md5sum /opt/contextbuilder/contextbuilder.jar /opt/contextbuilder/snowf
   releases (0.10.5, 0.10.6, 0.10.10, 0.10.11, 0.10.17, 0.10.19) ship nothing in
   the jar; deploying them restarts a live service for a version string. Asked,
   not yet ruled on.
-- **Snowflake credentials are per-user now.** Since 0.10.7 each signed-in user
-  enters their own at `/api/me/connection`; `SNOWFLAKE_*` in `.env` only pre-fills
-  the demo profile and should stay **blank**. The judge login is `jgp` / `odcs`.
+- **Snowflake is live, and the shared profile is seeded.** Since 0.10.7 each
+  signed-in user enters their own at `/api/me/connection`. The server's
+  `SNOWFLAKE_*` values (set 2026-10-16, hackathon account) pre-fill the demo
+  profile so the judges' login arrives **ready** instead of prompting. Verified
+  end to end the same day: catalog browse and Cortex both return real data.
+  Treat those values as configuration, not placeholders — blanking them takes the
+  ready-state away. Judge login is `jgp` / `odcs`.
 
 ### Known state, not yet done
 
@@ -115,6 +119,9 @@ ssh api 'md5sum /opt/contextbuilder/contextbuilder.jar /opt/contextbuilder/snowf
   to accept them.
 - **The api VM root filesystem is at 93%** (23 GB free). Not this tool (~357 MB),
   but everything on that host shares the consequence.
+- **The driver logs ~24 lines of EC2-IMDS retry noise at each boot**
+  (`RetryExec`), which the existing `RestRequest: OFF` in `application.yml` does
+  not cover. Bounded, stops after startup, but a one-line fix.
 
 ## The architecture, because it is two hops and the second one is easy to miss
 
@@ -253,17 +260,3 @@ For the vhost, timestamped backups sit beside it:
 | 502 on *everything* including `/actuator/health` on loopback | Service not listening; `journalctl -u contextbuilder -n 80` |
 | `503` after a vhost edit | Reload failed; `ssh api 'sudo nginx -t'` and restore the `.bak` |
 | Service restart-loops | Bad `ExecStart` java path, or a malformed `.env` (a `$(...)` or quoted value) |
-
-## Outstanding
-
-1. **The vhost is out of sync with its mirrors.** `tools.actianlabs.com.api.conf`
-   is kept **byte-identical in three places** — the ops repo
-   (`infra/api-vm/nginx/sites-available/`) and `deploy/nginx/` in both
-   `ai.jgp.crm` and `ai.jgp.tools.similardataproduct`. Context Builder is a
-   fourth tenant added to the live file and to this repo's copy only; the other
-   three still need the same edit.
-2. **Snowflake credentials.** Deployed with placeholders, so the tool runs and
-   is reachable but every data call returns 502.
-3. Minor: the driver logs ~24 lines of EC2-IMDS retry noise at each boot
-   (`RetryExec`), which the existing `RestRequest: OFF` in `application.yml`
-   does not cover. Bounded and stops after startup, but a one-line fix.
