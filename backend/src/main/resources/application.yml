@@ -4,6 +4,11 @@ spring:
   config:
     # Local credentials live in backend/.env (gitignored), KEY=value per line.
     import: optional:file:.env[.properties]
+  servlet:
+    multipart:
+      # Help panel attachments: 10 MB a file, 25 MB a report, plus room for the text parts.
+      max-file-size: 10MB
+      max-request-size: 26MB
 
 server:
   port: 8080
@@ -19,6 +24,22 @@ snowflake:
   schema: ${SNOWFLAKE_SCHEMA:}
   role: ${SNOWFLAKE_ROLE:}
   model: ${CORTEX_MODEL:claude-sonnet-5}
+
+# In-app Help panel (POST /api/self-report) files GitHub issues in this repo.
+# No token: the app still starts and the endpoint answers 503 not_configured.
+# The token needs issues: write, plus contents: write for attachments on the branch below.
+contextbuilder:
+  self-report:
+    github:
+      token: ${GITHUB_SELF_REPORT_TOKEN:}
+      api-base: https://api.github.com
+      web-base: https://github.com
+      repo-owner: jgperrin
+      repo-name: ai.jgp.hackathon.snowflake
+      branch: used-for-self-reports-do-not-delete
+      labels: self-report
+    rate-limit:
+      per-hour: 5
 
 logging:
   level:
