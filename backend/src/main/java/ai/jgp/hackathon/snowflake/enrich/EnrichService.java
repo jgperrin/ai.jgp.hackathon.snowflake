@@ -50,6 +50,8 @@ public class EnrichService {
 
     public EnrichResult enrich(Bundle bundle) {
         List<Job> jobs = new ArrayList<>();
+        AtomicInteger ids = new AtomicInteger();
+        List<Proposal> keys = new ArrayList<>();
         for (Map<String, Object> contract : bundle.contracts()) {
             Map<?, ?> server = server(contract);
             String database = String.valueOf(server.get("database"));
@@ -57,11 +59,14 @@ public class EnrichService {
             List<String> tables = ((List<?>) contract.get("schema")).stream()
                     .map(o -> String.valueOf(((Map<?, ?>) o).get("name"))).toList();
             for (TableProfile t : profiles.profile(new ProfileRequest(database, schema, tables)).tables()) {
-                jobs.add(new Job(String.valueOf(contract.get("id")), database, schema, t));
+                String contractId = String.valueOf(contract.get("id"));
+                jobs.add(new Job(contractId, database, schema, t));
+                Map<?, ?> object = ((List<?>) contract.get("schema")).stream().map(o -> (Map<?, ?>) o)
+                        .filter(o -> t.table().equals(o.get("name"))).findFirst().orElse(null);
+                KeyCandidates.propose(contractId, t, object, ids).ifPresent(keys::add);
             }
         }
-        AtomicInteger ids = new AtomicInteger();
-        List<Proposal> proposals = new ArrayList<>();
+        List<Proposal> proposals = new ArrayList<>(keys);
         List<String> warnings = new ArrayList<>();
         try (ExecutorService pool = Executors.newFixedThreadPool(PARALLEL_CALLS)) {
             List<CompletableFuture<AnswerParser.Result>> futures = jobs.stream()

@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.9] - 2026-10-16
+
+### Added
+- Analysis proposes a primary key for each table that declares none: the first identifier-named column with no nulls and one distinct value per row examined (deterministic, from the profile). Accepting it marks the property `primaryKey`/`required`, which gives the OSI/Apache Ossie export its `primary_key` and inferred relationships (DIND#37).
+
+### Fixed
+- Blank `SNOWFLAKE_*` settings no longer seed the demo profile with empty strings (e.g. `role: ""`).
+
 ## [0.10.8] - 2026-10-16
 
 ### Changed
