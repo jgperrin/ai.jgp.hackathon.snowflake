@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import ai.jgp.hackathon.snowflake.auth.UserContext;
 import ai.jgp.hackathon.snowflake.product.Bundle;
 import ai.jgp.hackathon.snowflake.quality.QualityModel.RuleResult;
 import ai.jgp.hackathon.snowflake.quality.QualityModel.RunResult;
@@ -58,7 +59,7 @@ public class QualityService {
         List<RuleResult> results;
         try (ExecutorService pool = Executors.newFixedThreadPool(4)) {
             List<CompletableFuture<RuleResult>> futures = checks.stream()
-                    .map(c -> CompletableFuture.supplyAsync(() -> check(c), pool)).toList();
+                    .map(c -> CompletableFuture.supplyAsync(UserContext.wrap(() -> check(c)), pool)).toList();
             results = futures.stream().map(CompletableFuture::join).toList();
         }
         int passed = (int) results.stream().filter(RuleResult::passed).count();

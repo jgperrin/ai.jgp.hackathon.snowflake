@@ -18,7 +18,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import tools.jackson.databind.json.JsonMapper;
 
-@SpringBootTest
+// Sign-in is covered by AuthTest; here every request runs as the demo user.
+@SpringBootTest(properties = "contextbuilder.auth.required=false")
 @AutoConfigureMockMvc
 @ActiveProfiles("local")
 class EnrichControllerTest {

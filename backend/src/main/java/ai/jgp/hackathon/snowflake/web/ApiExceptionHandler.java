@@ -10,11 +10,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import ai.jgp.hackathon.snowflake.connection.ConnectionModel;
+
 /** Every API error reaches the browser as {@code {"message": ...}} so the UI can show it. */
 @RestControllerAdvice
 class ApiExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
+
+    @ExceptionHandler(ConnectionModel.NoConnectionException.class)
+    ResponseEntity<Map<String, String>> noConnection(ConnectionModel.NoConnectionException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage(), "code", "NO_CONNECTION"));
+    }
 
     @ExceptionHandler(IllegalArgumentException.class)
     ResponseEntity<Map<String, String>> badRequest(IllegalArgumentException e) {
