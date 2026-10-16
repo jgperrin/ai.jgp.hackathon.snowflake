@@ -140,7 +140,7 @@ export default function App() {
             <HelpButton user={user.username} connected={connected} />
             <button type="button" className="btn-secondary" onClick={() => setPanel('')}>
               <span className={connected ? 'badge badge-ok' : 'badge badge-gray'}>
-                {connected ? '● connected' : '○ not connected'}
+                {connected ? '● ready' : '○ not connected'}
               </span>
               Snowflake connection
             </button>
