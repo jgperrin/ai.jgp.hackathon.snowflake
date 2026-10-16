@@ -12,6 +12,110 @@ separately checkable so a failure tells you where it happened.
 | Frontend | `/var/www/tools.actianlabs.com/contextbuilder/` (www-data) |
 | Config | `/opt/contextbuilder/.env`, `jgp:jgp` mode 0600 |
 
+## The deploying rule — read this first
+
+**Standing instruction (JGP, 2026-10-16): keep the deployment on the newest
+release. Watch for new tags and deploy them as they land.**
+
+### Deploy the newest tag
+
+```bash
+VERSION=<x.y.z> ./deploy/deploy.sh
+```
+
+Nothing else is needed. The script refuses to run without `VERSION`, checks the
+tag exists, and then does the whole job — see "What the script does for you".
+
+### Watch for new tags
+
+Run this as a background watcher, replacing `LAST` with the version just
+deployed. It prints one line per new release, which is the trigger to deploy.
+
+```bash
+cd /Users/jean-georges.perrin/GitHub/ai.jgp.hackathon.snowflake
+LAST=v0.10.23
+while true; do
+  sleep 60
+  NOW=$(git ls-remote --tags --refs origin 2>/dev/null \
+        | sed 's#.*refs/tags/##' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+        | sort -V | tail -1)
+  if [ -n "$NOW" ] && [ "$NOW" != "$LAST" ]; then
+    echo "NEW RELEASE $NOW — deployed is $LAST, redeploy needed"
+    LAST="$NOW"
+  fi
+done
+```
+
+(Use `if`, not an `&&` chain: the chain returns non-zero whenever there is no
+new tag, which kills the loop under `set -e`.)
+
+**Re-arm it every 30 minutes.** A long-running watcher is killed at 30 minutes
+and a tag landing in the gap is missed silently — that happened once here, hiding
+seven releases. Prefer `Monitor` where available; otherwise plan to restart it.
+
+### What the script does for you
+
+- **Builds in a detached worktree of the tag**, never in the checkout. Other
+  agent sessions keep this checkout dirty, and an in-place build would bake their
+  uncommitted work into the shipped jar. This also means a stale, diverged or
+  dirty checkout cannot corrupt a deploy.
+- **Refuses a bundle missing the `/contextbuilder` prefix**, since that ships as a
+  blank page and nothing else explains why.
+- **Uploads the jar as `.part`** and renames it into place only after a sha256
+  match, so a failed transfer cannot leave a truncated jar where rollback would
+  find it.
+- **Prunes to the two newest jars** after the smoke tests pass, so a failed deploy
+  cannot delete the jar it would roll back to.
+- **Smoke tests** the loopback health endpoint and the public URL.
+
+### Verify afterwards
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' https://tools.actianlabs.com/contextbuilder/   # 200
+for p in / /schema/ /dpcompare/ /crm/; do
+  printf '%-12s %s\n' "$p" "$(curl -s -o /dev/null -w '%{http_code}' https://tools.actianlabs.com$p)"
+done   # all 200 — this vhost serves four tools and a bad edit breaks the others
+```
+
+Then confirm the running jar is byte-identical to the tag:
+
+```bash
+ssh api 'md5sum /opt/contextbuilder/contextbuilder.jar /opt/contextbuilder/snowflake-<x.y.z>.jar'
+```
+
+### Things that will bite
+
+- **`git pull` on `main` can fail with "not possible to fast-forward".** The
+  checkout usually carries another session's unpushed commit. Leave it alone —
+  never reset, stash or force. Since deploys build from a tag worktree, the
+  checkout's state does not matter.
+- **Rollback reaches back exactly one release** (`rollback.sh`), because only two
+  jars are kept. Older needs a rebuild from its tag, ~4 minutes.
+- **Docs-only tags still get deployed** unless JGP says otherwise. Several
+  releases (0.10.5, 0.10.6, 0.10.10, 0.10.11, 0.10.17, 0.10.19) ship nothing in
+  the jar; deploying them restarts a live service for a version string. Asked,
+  not yet ruled on.
+- **Snowflake credentials are per-user now.** Since 0.10.7 each signed-in user
+  enters their own at `/api/me/connection`; `SNOWFLAKE_*` in `.env` only pre-fills
+  the demo profile and should stay **blank**. The judge login is `jgp` / `odcs`.
+
+### Known state, not yet done
+
+- **The vhost is out of sync with its mirrors.** `tools.actianlabs.com.api.conf`
+  is kept byte-identical in four places — the ops repo
+  (`infra/api-vm/nginx/sites-available/`) and `deploy/nginx/` in this repo,
+  `ai.jgp.crm` and `ai.jgp.tools.similardataproduct`. Only this repo's copy and
+  the live file know about `/contextbuilder`; the other three still have three
+  tenants, so reinstalling from one would silently drop this tool.
+- **Self-report is off** (503 `not_configured`) until the server has
+  `GITHUB_SELF_REPORT_TOKEN` (issues + contents write) and the repo has a
+  `used-for-self-reports-do-not-delete` branch.
+- **`/contextbuilder/api/` inherits the vhost's 5 MB body cap**, so larger
+  self-report attachment sets get a 413 — it needs its own `client_max_body_size`
+  to accept them.
+- **The api VM root filesystem is at 93%** (23 GB free). Not this tool (~357 MB),
+  but everything on that host shares the consequence.
+
 ## The architecture, because it is two hops and the second one is easy to miss
 
 `tools.actianlabs.com` resolves to **cahya** (`40.160.32.221`) — a Proxmox host

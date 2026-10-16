@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.25] - 2026-10-16
+
+### Added
+- `deploy/README.md` opens with the deploying rule (DIND#71): the standing
+  instruction, the exact command, a tested watcher snippet for new release tags,
+  what `deploy.sh` already guarantees, and the gotchas that have actually bitten
+  — a diverged checkout, the 30-minute watcher expiry, one-release rollback.
+  Known outstanding state is recorded there too.
+
+### Note
+- No artifact change: documentation only.
+
 ## [0.10.24] - 2026-10-16
 
 ### Changed
