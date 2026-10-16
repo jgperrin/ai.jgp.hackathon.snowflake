@@ -132,7 +132,7 @@ export default function App() {
             </button>
           </div>
         </div>
-        <h1>From Snowflake schema to data product</h1>
+        <h1>From Snowflake schema to AI-ready data product</h1>
         <p className="standards">
           <span>ODCS v3.2</span>
           <span>ODPS v1.1</span>
