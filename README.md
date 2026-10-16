@@ -23,7 +23,9 @@ _Built for the Data in the D hackathon. Repository: `ai.jgp.hackathon.snowflake`
 
 Judges: sign in with **`jgp` / `odcs`**. The demo profile comes with a Snowflake connection to the hackathon lab account; you can change it under **Snowflake connection** in the header.
 
-A 3-minute walkthrough is in [`doc/DEMO.md`](doc/DEMO.md).
+A 3-minute walkthrough is in [`doc/DEMO.md`](doc/DEMO.md). The Devpost story, with each
+challenge linked to the CHANGELOG entry that records the fix, is in
+[`doc/SUBMISSION.md`](doc/SUBMISSION.md).
 
 ## What it produced on the lab data
 
