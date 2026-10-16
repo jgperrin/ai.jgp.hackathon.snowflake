@@ -59,18 +59,26 @@ const enc = encodeURIComponent
  */
 const bundleBody = (bundle: Bundle) => ({ ...bundle, bundle })
 
+/**
+ * Built from the base URL so every path is correct both at the domain root and under the
+ * production subpath. BASE_URL always ends in '/', so this is '/contextbuilder/api' in a
+ * production build and '/api' in dev. Hardcoding '/api/...' would send the browser to the
+ * domain root and 404 on every call.
+ */
+const API = `${import.meta.env.BASE_URL}api`
+
 export const httpApi: Api = {
-  listDatabases: () => request('GET', '/api/catalog/databases'),
-  listSchemas: (db) => request('GET', `/api/catalog/databases/${enc(db)}/schemas`),
+  listDatabases: () => request('GET', `${API}/catalog/databases`),
+  listSchemas: (db) => request('GET', `${API}/catalog/databases/${enc(db)}/schemas`),
   listTables: (db, schema) =>
-    request('GET', `/api/catalog/databases/${enc(db)}/schemas/${enc(schema)}/tables`),
-  generate: (req) => request('POST', '/api/products/generate', req),
-  toYaml: (bundle) => request('POST', '/api/products/yaml', bundleBody(bundle)),
-  enrich: (bundle) => request('POST', '/api/enrich', bundleBody(bundle)),
-  apply: (bundle, accepted) => request('POST', '/api/products/apply', { bundle, accepted }),
-  runQuality: (bundle) => request('POST', '/api/quality/run', bundleBody(bundle)),
-  save: (bundle) => request('POST', '/api/products/save', bundleBody(bundle)),
-  listProducts: () => request('GET', '/api/products'),
-  getProduct: (id) => request('GET', `/api/products/${enc(id)}`),
-  exportOsi: (bundle) => request('POST', '/api/export/osi', bundleBody(bundle)),
+    request('GET', `${API}/catalog/databases/${enc(db)}/schemas/${enc(schema)}/tables`),
+  generate: (req) => request('POST', `${API}/products/generate`, req),
+  toYaml: (bundle) => request('POST', `${API}/products/yaml`, bundleBody(bundle)),
+  enrich: (bundle) => request('POST', `${API}/enrich`, bundleBody(bundle)),
+  apply: (bundle, accepted) => request('POST', `${API}/products/apply`, { bundle, accepted }),
+  runQuality: (bundle) => request('POST', `${API}/quality/run`, bundleBody(bundle)),
+  save: (bundle) => request('POST', `${API}/products/save`, bundleBody(bundle)),
+  listProducts: () => request('GET', `${API}/products`),
+  getProduct: (id) => request('GET', `${API}/products/${enc(id)}`),
+  exportOsi: (bundle) => request('POST', `${API}/export/osi`, bundleBody(bundle)),
 }

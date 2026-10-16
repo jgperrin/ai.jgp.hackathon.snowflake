@@ -13,7 +13,7 @@
 
     <groupId>ai.jgp.hackathon</groupId>
     <artifactId>snowflake</artifactId>
-    <version>0.10.1</version>
+    <version>0.10.2</version>
     <name>ai.jgp.hackathon.snowflake</name>
     <description>AI hackathon project on Snowflake Cortex</description>
 
@@ -34,6 +34,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <!-- Readiness signal for systemd, the reverse proxy and the deploy smoke test. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
         <dependency>

@@ -50,6 +50,15 @@ class AnswerParserTest {
     }
 
     @Test
+    void toleratesTrailingCommasAndComments() {
+        AnswerParser.Result r = parse("""
+                {"table": {"description": 'Claims.', }, // the table
+                 "columns": [],}""");
+        assertThat(r.proposals()).hasSize(1);
+        assertThat(r.warnings()).isEmpty();
+    }
+
+    @Test
     void malformedAnswerGivesWarningNotException() {
         AnswerParser.Result r = parse("I cannot help with that {not json");
         assertThat(r.proposals()).isEmpty();

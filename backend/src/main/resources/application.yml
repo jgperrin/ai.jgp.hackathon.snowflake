@@ -24,3 +24,19 @@ logging:
   level:
     # The driver probes cloud metadata endpoints (EC2, GCP, Azure) at startup and logs each miss as ERROR.
     net.snowflake.client.internal.jdbc.RestRequest: OFF
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Health only. nginx proxies /contextbuilder/api/ and nothing else, so actuator
+        # stays reachable on the loopback port alone and is never public.
+        include: health
+  health:
+    db:
+      # The DataSource check reports the whole app DOWN whenever Snowflake is unreachable.
+      # The app is built to start anyway and fail per request, so health must describe the
+      # process and not Snowflake - otherwise a Snowflake blip looks like an app outage.
+      enabled: false
+    # ODCS uses $defs entries the validator does not know as keywords; it warns once per entry at startup.
+    com.networknt.schema.keyword.UnknownKeywordFactory: ERROR

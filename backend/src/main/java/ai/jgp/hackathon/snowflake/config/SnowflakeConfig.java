@@ -40,6 +40,10 @@ class SnowflakeConfig {
         // before the server does, rather than handing out one the server has already closed.
         config.setMaxLifetime(Duration.ofMinutes(50).toMillis());
         config.setKeepaliveTime(Duration.ofMinutes(5).toMillis());
+        // Boot even when Snowflake is unreachable: Hikari's default (-1 is off, >0 fails fast)
+        // would make a transient blip or a wrong password a restart loop under systemd.
+        // The pool connects on first use instead, and requests fail with a clean 502.
+        config.setInitializationFailTimeout(-1);
         return new HikariDataSource(config);
     }
 }

@@ -24,10 +24,11 @@ final class PromptBuilder {
 
                 Rules:
                 - Base every proposal on the profile. Do not invent columns. Use column names exactly as given.
-                - Descriptions: one clear business sentence. Business names: Title Case, human friendly.
+                - Be concise: descriptions at most 15 words, rationales at most 12 words, at most 2 tags per column
+                  (omit "tags" when none apply). Business names: Title Case, human friendly.
                 - classification: one of public, internal, confidential, restricted. Mark personal data (names, email,
                   phone, birth date, address, government ids) restricted and set "pii": true.
-                - qualityRules: 3 to 8 rules that the profile shows currently HOLD. Prefer:
+                - qualityRules: 3 to 6 rules that the profile shows currently HOLD. Prefer:
                   * library rules: {"column": "COL", "type": "library", "metric": "nullValues" | "duplicateValues" |
                     "invalidValues" | "rowCount", one operator, "unit": "rows"} ; for invalidValues add
                     "arguments": {"validValues": [...]} (low-cardinality columns) or {"pattern": "regex"}.
