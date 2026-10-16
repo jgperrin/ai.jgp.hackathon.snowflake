@@ -1,0 +1,27 @@
+# Build output
+backend/target/
+frontend/dist/
+frontend/node_modules/
+
+# Credentials — never commit these
+.env
+.env.*
+!.env.example
+*.pem
+*.p8
+*.sfx
+
+# Logs
+*.log
+logs/
+
+# Editors
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db

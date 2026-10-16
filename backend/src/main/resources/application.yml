@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: ai-jgp-hackathon-snowflake
+
+server:
+  port: 8080
+
+# Credentials are read from the environment and are never committed.
+# Run with -Dspring-boot.run.profiles=local to skip Snowflake entirely.
+snowflake:
+  account: ${SNOWFLAKE_ACCOUNT:}
+  user: ${SNOWFLAKE_USER:}
+  password: ${SNOWFLAKE_PASSWORD:}
+  warehouse: ${SNOWFLAKE_WAREHOUSE:}
+  database: ${SNOWFLAKE_DATABASE:}
+  schema: ${SNOWFLAKE_SCHEMA:}
+  role: ${SNOWFLAKE_ROLE:}
+  model: ${CORTEX_MODEL:claude-sonnet-5}

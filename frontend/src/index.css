@@ -1,0 +1,126 @@
+:root {
+  --bg: #ffffff;
+  --panel: #f7f7f8;
+  --text: #1a1a1f;
+  --muted: #6b6375;
+  --border: #e3e3e6;
+  --accent: #6b21d4;
+  --accent-text: #ffffff;
+  --danger: #b42318;
+  --danger-bg: #fef3f2;
+
+  font: 16px/1.55 system-ui, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16171d;
+    --panel: #1f2028;
+    --text: #f3f4f6;
+    --muted: #9ca3af;
+    --border: #2e303a;
+    --accent: #c084fc;
+    --accent-text: #1a1a1f;
+    --danger: #fda29b;
+    --danger-bg: #2a1a1a;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+main {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
+}
+
+h1 {
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+h2 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin: 0 0 0.6rem;
+}
+
+.subtitle {
+  color: var(--muted);
+  margin: 0.4rem 0 2.5rem;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+textarea {
+  font: inherit;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  resize: vertical;
+}
+
+textarea:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+button {
+  align-self: flex-start;
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent-text);
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.4rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.panel {
+  margin-top: 2rem;
+  padding: 1.25rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.panel p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.panel-error {
+  color: var(--danger);
+  background: var(--danger-bg);
+  border-color: var(--danger);
+}
