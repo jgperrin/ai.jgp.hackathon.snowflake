@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.3] - 2026-10-16
+
+### Fixed
+- Validator log level moved under `logging.level`; it had landed under `management.health` and had no effect (DIND#23).
+
 ## [0.10.2] - 2026-10-16
 
 ### Fixed
