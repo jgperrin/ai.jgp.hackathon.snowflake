@@ -51,7 +51,7 @@ collision surfaces as a silent failure to bind. 8080 is Bitol, 8083 bitol-mcp,
 ## Routine deploy
 
 ```bash
-VERSION=0.10.3 ./deploy/deploy.sh
+VERSION=0.10.8 ./deploy/deploy.sh
 ```
 
 It runs the backend tests, builds both artifacts, refuses to continue if the
@@ -59,6 +59,14 @@ bundle is missing the `/contextbuilder` prefix, uploads, restarts, and smoke
 tests — asserting the public URL answers **200** and carries the app title, so a
 stale bundle cannot ship quietly. There is no credential to assert: the tool is
 open (see Access above).
+
+**It builds in a worktree of the tag, not in this checkout.** This repo is worked
+by several agent sessions at once and the working tree is routinely dirty with
+their in-flight work, so `mvn package` in place would bake whatever happened to
+be there into the jar that ships — producing a deployed artifact that matches no
+commit. The worktree is created detached at the tag, used for tests and both
+builds, and removed on exit even if the run fails. Nothing about your current
+working tree is touched.
 
 ## First-time provisioning (already done, 2026-10-16 — kept for rebuilds)
 

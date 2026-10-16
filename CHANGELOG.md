@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.10] - 2026-10-16
+
+### Changed
+- `deploy/deploy.sh` builds in a detached **worktree of the tag** instead of the
+  shared checkout (DIND#38). The checkout is routinely dirty with other agent
+  sessions' in-flight work, so an in-place build would bake uncommitted code into
+  the jar that ships — a deployed artifact matching no commit. The worktree is
+  removed on exit, including on failure.
+
+### Note
+- No artifact change: ops files only.
+
 ## [0.10.9] - 2026-10-16
 
 ### Added
