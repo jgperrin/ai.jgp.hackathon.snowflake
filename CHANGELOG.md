@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.33] - 2026-10-16
+
+### Fixed
+- The Source step also hides `USER$<name>`, the per-user scratch database as
+  the lab account actually names it (`USER$JGP`). #62's rule only covered
+  `USERS$*`, so a live smoke check still listed it among the account's
+  databases (DIND#86).
+
 ## [0.10.32] - 2026-10-16
 
 ### Added

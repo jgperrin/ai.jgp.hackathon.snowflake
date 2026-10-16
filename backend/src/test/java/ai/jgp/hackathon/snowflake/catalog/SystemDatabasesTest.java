@@ -14,13 +14,13 @@ class SystemDatabasesTest {
             "SNOWFLAKE_SAMPLE_DATA",
             "ORGDATACLOUD$INTERNAL$OS_BUILDING_SAMPLE_DATA",
             "ORGDATACLOUD$INTERNAL$TRANSFORM_HEALTHCARE_PERSISTED_TABLES",
-            "USERS$JGP"})
+            "USERS$JGP", "USER$JGP"})
     void recognisesEveryPattern(String name) {
         assertThat(SystemDatabases.isSystem(name)).isTrue();
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"snowflake", "Snowflake_Sample_Data", "orgdatacloud$internal$x", "users$jgp"})
+    @ValueSource(strings = {"snowflake", "Snowflake_Sample_Data", "orgdatacloud$internal$x", "users$jgp", "user$jgp"})
     void isCaseInsensitive(String name) {
         assertThat(SystemDatabases.isSystem(name)).isTrue();
     }
@@ -28,7 +28,7 @@ class SystemDatabasesTest {
     @ParameterizedTest
     @ValueSource(strings = {
             "FINSERV_DW", "USERS_ARCHIVE", "MY_SNOWFLAKE", "SNOWFLAKE_DW", "DEFAULT_DATABASE",
-            "AUTO_MFG_DW", "ORGDATACLOUD", "USERS"})
+            "AUTO_MFG_DW", "ORGDATACLOUD", "USERS", "USER", "USER_ARCHIVE", "POLICY_DB"})
     void ordinaryNamesAreNotSystem(String name) {
         assertThat(SystemDatabases.isSystem(name)).isFalse();
     }
