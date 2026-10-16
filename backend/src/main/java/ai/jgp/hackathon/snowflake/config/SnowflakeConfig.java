@@ -4,7 +4,6 @@ import java.time.Duration;
 
 import javax.sql.DataSource;
 
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -14,7 +13,6 @@ import com.zaxxer.hikari.HikariDataSource;
 
 @Configuration
 @Profile("!local")
-@EnableConfigurationProperties(CortexProperties.class)
 class SnowflakeConfig {
 
     /**

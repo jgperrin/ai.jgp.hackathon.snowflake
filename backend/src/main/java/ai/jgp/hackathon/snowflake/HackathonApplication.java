@@ -2,7 +2,10 @@ package ai.jgp.hackathon.snowflake;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
+
+import ai.jgp.hackathon.snowflake.config.CortexProperties;
 
 /**
  * DataSourceAutoConfiguration is switched off because the Snowflake DataSource is built
@@ -10,6 +13,7 @@ import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
  * 'local' profile, where no Snowflake connection is configured or wanted.
  */
 @SpringBootApplication(exclude = DataSourceAutoConfiguration.class)
+@EnableConfigurationProperties(CortexProperties.class)
 public class HackathonApplication {
 
     public static void main(String[] args) {
