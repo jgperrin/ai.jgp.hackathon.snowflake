@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.13] - 2026-10-16
+
+### Changed
+- Frontend restyled to the jgp.ai / Actian Labs house style (ops/ux): Roboto, the Actian-blue and Cool Blue-Gray palette, 56px white top bar with brand mark and version pill, PageHeader with the ODCS / ODPS / OSI chips, card / button / badge / table / chip components, the hourglass loading ring, and the canonical Actian Labs footer (collapsible, `DO NOT USE FOR PRODUCTION`, `Use at your own risk.`). Sign-in is a centered card with the judges' demo-account callout. Light and dark follow the system appearance. Behaviour and API calls unchanged (DIND#36).
+
 ## [0.10.12] - 2026-10-16
 
 ### Fixed
