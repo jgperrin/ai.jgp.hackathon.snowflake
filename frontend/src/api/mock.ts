@@ -21,7 +21,9 @@ import type {
   Proposal,
   QualityResult,
   QualityRule,
+  SavedArtifact,
   SavedProduct,
+  SavedSave,
   Schema,
   SlaProperty,
   Table,
@@ -318,6 +320,46 @@ function applyOne(contract: ContractDoc, p: Proposal) {
 }
 
 const saved = new Map<string, { meta: SavedProduct; bundle: Bundle }>()
+/** The mock ARTIFACTS table, one entry per save (newest last), seeded on first browse. */
+const saves: { save: SavedSave; artifacts: SavedArtifact[]; bundle: Bundle }[] = []
+let seeded = false
+
+const text = (value: unknown): string | null => (value == null ? null : String(value))
+
+/** Mirrors StoreService.save: product, one row per contract, then the OSI model. */
+async function recordSave(bundle: Bundle, savedAt: string, savedBy: string) {
+  const osi = await dataApi.exportOsi(bundle)
+  const artifacts: SavedArtifact[] = [
+    { artifactId: bundle.product.id, kind: 'ODPS', name: bundle.product.name, version: text(bundle.product.version),
+      status: text(bundle.product.status), yaml: yaml(bundle.product), json: JSON.stringify(bundle.product) },
+    ...bundle.contracts.map((c) => ({ artifactId: c.id, kind: 'ODCS', name: c.name, version: c.version,
+      status: text(c.status), yaml: yaml(c), json: JSON.stringify(c) })),
+    { artifactId: bundle.product.id, kind: 'OSI', name: bundle.product.id, version: '0.1', status: null,
+      yaml: osi.yaml, json: null },
+  ]
+  const save: SavedSave = {
+    saveId: crypto.randomUUID(),
+    productId: bundle.product.id,
+    name: bundle.product.name,
+    version: text(bundle.product.version),
+    savedAt,
+    savedBy,
+    artifacts: artifacts.map(({ artifactId, kind, name, version, status }) => ({ artifactId, kind, name, version, status })),
+  }
+  saves.push({ save, artifacts, bundle: clone(bundle) })
+  return save
+}
+
+/** One illustrative earlier save: a product, two contracts and its OSI model. */
+async function seedSaves() {
+  if (seeded) return
+  seeded = true
+  const bundle = await dataApi.generate({
+    database: 'FINSERV_DW',
+    schemas: [{ schema: 'CORE', tables: [] }, { schema: 'RISK', tables: [] }],
+  })
+  await recordSave(bundle, new Date(Date.now() - 26 * 3600_000).toISOString(), 'JGP')
+}
 
 type AuthKey =
   | 'demoCredentials'
@@ -457,6 +499,8 @@ const dataApi: DataApi = {
     const version = prev ? `1.0.${Number(prev.meta.version.split('.')[2]) + 1}` : '1.0.0'
     const meta = { id: bundle.product.id, name: bundle.product.name, version, savedAt: new Date().toISOString() }
     saved.set(meta.id, { meta, bundle: clone(bundle) })
+    await seedSaves()
+    await recordSave({ ...bundle, product: { ...bundle.product, version } }, meta.savedAt, 'JGP')
     return { id: meta.id, version, savedAt: meta.savedAt }
   },
   async listProducts() {
@@ -465,9 +509,20 @@ const dataApi: DataApi = {
   },
   async getProduct(id) {
     await sleep(200)
-    const hit = saved.get(id)
+    const hit = saved.get(id) ?? saves.find((s) => s.save.saveId === id)
     if (!hit) throw new Error(`No saved product ${id}`)
     return clone(hit.bundle)
+  },
+  async listSaves() {
+    await seedSaves()
+    await sleep(250)
+    return clone([...saves].reverse().map((s) => s.save))
+  },
+  async getSaveArtifacts(id) {
+    await sleep(200)
+    const hit = saves.find((s) => s.save.saveId === id)
+    if (!hit) throw new ApiError(400, `No saved product ${id}`)
+    return clone(hit.artifacts)
   },
   async exportOsi(bundle) {
     await sleep(600)

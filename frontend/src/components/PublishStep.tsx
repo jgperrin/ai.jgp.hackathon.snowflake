@@ -7,10 +7,11 @@ import { CopyButton, ErrorBanner, Spinner } from './common'
 interface Props {
   bundle: Bundle
   onLoad: (bundle: Bundle) => Promise<void>
+  onBrowseStore: () => void
 }
 
 /** Step 5: persist the product in Snowflake and export it to OSI/Apache Ossie. */
-export function PublishStep({ bundle, onLoad }: Props) {
+export function PublishStep({ bundle, onLoad, onBrowseStore }: Props) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState<SaveResult | null>(null)
   const [exporting, setExporting] = useState(false)
@@ -144,6 +145,9 @@ export function PublishStep({ bundle, onLoad }: Props) {
           <span className="spacer" />
           <button type="button" className="btn-ghost btn-small" onClick={() => void refresh()}>
             Refresh
+          </button>
+          <button type="button" className="btn-ghost btn-small" onClick={onBrowseStore}>
+            Everything saved in Snowflake →
           </button>
         </div>
         {products === null ? (

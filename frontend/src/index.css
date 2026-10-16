@@ -1913,3 +1913,35 @@ input[type='radio'] {
   font-family: var(--font-mono);
   font-size: 11px;
 }
+
+/* Store view (DIND#63): the wizard and its header stay mounted under it, hidden. */
+.content.is-store > :not(.store-pane) {
+  display: none;
+}
+
+.store-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.store-subline {
+  margin: 0;
+}
+
+.store-grid td {
+  vertical-align: middle;
+}
+
+.store-toggle {
+  min-width: 2rem;
+}
+
+.store-grid .is-expanded td,
+.store-grid .store-artifacts > td {
+  background: var(--canvas);
+}
+
+.store-artifacts .grid {
+  margin: 0.25rem 0 0.5rem;
+}
