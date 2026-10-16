@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.21] - 2026-10-16
+
+### Changed
+- Source step: the database is picked from a filterable list instead of a
+  dropdown, and Snowflake's own databases (`SNOWFLAKE`, `SNOWFLAKE_SAMPLE_DATA`,
+  `ORGDATACLOUD$*`, `USERS$*`) are hidden behind a "Show system databases (n
+  hidden)" toggle (DIND#62). On the lab account that cuts 22 rows to the five
+  account databases. `GET /api/catalog/databases` now carries `system` on every
+  row; the name rule lives in `SystemDatabases`.
+
 ## [0.10.20] - 2026-10-16
 
 ### Changed
