@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.22] - 2026-10-16
+
+### Added
+- Appearance switch in the top bar (DIND#59): System (default) / Light / Dark as
+  three icon buttons, stored per browser as `cb-appearance`. An explicit choice
+  overrides the OS, `color-scheme` follows it, and an inline script in
+  `index.html` applies it before first paint, so there's no flash of the wrong theme.
+  The classification/tag chip colours moved into `--tag-bg` / `--tag-text`
+  tokens.
+
 ## [0.10.21] - 2026-10-16
 
 ### Changed
