@@ -1,21 +1,17 @@
+import { ApiError } from './errors'
 import type { Api, Bundle } from './types'
 
-/** Raised for any non-2xx answer; the message is what the backend said, when it said something. */
-export class ApiError extends Error {
-  readonly status: number
+export { ApiError } from './errors'
 
-  constructor(status: number, message: string) {
-    super(message)
-    this.name = 'ApiError'
-    this.status = status
-  }
-}
+type Method = 'GET' | 'POST' | 'PUT'
 
-async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown): Promise<T> {
+async function send(method: Method, path: string, body?: unknown): Promise<Response> {
   let response: Response
   try {
     response = await fetch(path, {
       method,
+      // The session lives in a cookie; same-origin is the default, stated so nobody "fixes" it to omit.
+      credentials: 'same-origin',
       headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
       body: body === undefined ? undefined : JSON.stringify(body),
     })
@@ -24,28 +20,49 @@ async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown):
   }
 
   if (!response.ok) {
-    throw new ApiError(response.status, await errorMessage(response, method, path))
+    const { message, code } = await errorBody(response, method, path)
+    throw new ApiError(response.status, message, code)
   }
-  return (await response.json()) as T
+  return response
 }
 
-/** Backend errors come as {message} or as a Spring ProblemDetail {detail}; fall back to the status line. */
-async function errorMessage(response: Response, method: string, path: string): Promise<string> {
+async function request<T>(method: Method, path: string, body?: unknown): Promise<T> {
+  return (await (await send(method, path, body)).json()) as T
+}
+
+/** Same as request, but a given status (401 on /me, 404 on /demo) means "nothing" rather than an error. */
+async function orNull<T>(status: number, call: Promise<T>): Promise<T | null> {
+  try {
+    return await call
+  } catch (cause) {
+    if (cause instanceof ApiError && cause.status === status) {
+      return null
+    }
+    throw cause
+  }
+}
+
+/** Backend errors come as {message, code?} or as a Spring ProblemDetail {detail}; fall back to the status line. */
+async function errorBody(
+  response: Response,
+  method: string,
+  path: string,
+): Promise<{ message: string; code: string | null }> {
   const fallback = `${method} ${path} failed: ${response.status} ${response.statusText}`
   let text = ''
   try {
     text = await response.text()
   } catch {
-    return fallback
+    return { message: fallback, code: null }
   }
   if (!text) {
-    return fallback
+    return { message: fallback, code: null }
   }
   try {
-    const json = JSON.parse(text) as { message?: string; detail?: string; title?: string }
-    return json.message || json.detail || json.title || fallback
+    const json = JSON.parse(text) as { message?: string; detail?: string; title?: string; code?: string }
+    return { message: json.message || json.detail || json.title || fallback, code: json.code ?? null }
   } catch {
-    return `${fallback} — ${text.slice(0, 300)}`
+    return { message: `${fallback} — ${text.slice(0, 300)}`, code: null }
   }
 }
 
@@ -68,6 +85,14 @@ const bundleBody = (bundle: Bundle) => ({ ...bundle, bundle })
 const API = `${import.meta.env.BASE_URL}api`
 
 export const httpApi: Api = {
+  demoCredentials: () => orNull(404, request('GET', `${API}/auth/demo`)),
+  login: (credentials) => request('POST', `${API}/auth/login`, credentials),
+  logout: async () => {
+    await send('POST', `${API}/auth/logout`)
+  },
+  me: () => orNull(401, request('GET', `${API}/auth/me`)),
+  getConnection: () => request('GET', `${API}/me/connection`),
+  saveConnection: (update) => request('PUT', `${API}/me/connection`, update),
   listDatabases: () => request('GET', `${API}/catalog/databases`),
   listSchemas: (db) => request('GET', `${API}/catalog/databases/${enc(db)}/schemas`),
   listTables: (db, schema) =>

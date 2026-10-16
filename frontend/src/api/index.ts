@@ -1,8 +1,9 @@
+import { ApiError, NO_CONNECTION } from './errors'
 import { httpApi } from './http'
 import type { Api } from './types'
 
 export * from './types'
-export { ApiError } from './http'
+export { ApiError, NO_CONNECTION } from './errors'
 
 /** True only under `npm run dev:mock`; the constant `false` in any build. */
 export const MOCK = import.meta.env.DEV && import.meta.env.VITE_MOCK === '1'
@@ -21,17 +22,57 @@ function impl(): Promise<Api> {
   return Promise.resolve(httpApi)
 }
 
+/*
+ * Global session handling. Any call (other than the sign-in calls themselves) that
+ * answers 401 means the session is gone; a 409 NO_CONNECTION means the user is
+ * signed in but has no working Snowflake connection. The shell (App) listens and
+ * reacts once, so no step component has to know about either case. The error is
+ * still thrown, so the caller's own spinner and error state unwind normally.
+ */
+export type SessionEvent = { kind: 'unauthorized' } | { kind: 'no-connection'; message: string }
+type Listener = (event: SessionEvent) => void
+const listeners = new Set<Listener>()
+
+export function onSessionEvent(listener: Listener): () => void {
+  listeners.add(listener)
+  return () => {
+    listeners.delete(listener)
+  }
+}
+
+async function guarded<T>(call: () => Promise<T>): Promise<T> {
+  try {
+    return await call()
+  } catch (cause) {
+    if (cause instanceof ApiError) {
+      if (cause.status === 401) {
+        listeners.forEach((l) => l({ kind: 'unauthorized' }))
+      } else if (cause.status === 409 && cause.code === NO_CONNECTION) {
+        listeners.forEach((l) => l({ kind: 'no-connection', message: cause.message }))
+      }
+    }
+    throw cause
+  }
+}
+
 export const api: Api = {
-  listDatabases: async () => (await impl()).listDatabases(),
-  listSchemas: async (db) => (await impl()).listSchemas(db),
-  listTables: async (db, schema) => (await impl()).listTables(db, schema),
-  generate: async (req) => (await impl()).generate(req),
-  toYaml: async (bundle) => (await impl()).toYaml(bundle),
-  enrich: async (bundle) => (await impl()).enrich(bundle),
-  apply: async (bundle, accepted) => (await impl()).apply(bundle, accepted),
-  runQuality: async (bundle) => (await impl()).runQuality(bundle),
-  save: async (bundle) => (await impl()).save(bundle),
-  listProducts: async () => (await impl()).listProducts(),
-  getProduct: async (id) => (await impl()).getProduct(id),
-  exportOsi: async (bundle) => (await impl()).exportOsi(bundle),
+  // Sign-in calls: a 401 here is an answer, not a lost session.
+  demoCredentials: async () => (await impl()).demoCredentials(),
+  login: async (credentials) => (await impl()).login(credentials),
+  logout: async () => (await impl()).logout(),
+  me: async () => (await impl()).me(),
+  getConnection: () => guarded(async () => (await impl()).getConnection()),
+  saveConnection: (update) => guarded(async () => (await impl()).saveConnection(update)),
+  listDatabases: () => guarded(async () => (await impl()).listDatabases()),
+  listSchemas: (db) => guarded(async () => (await impl()).listSchemas(db)),
+  listTables: (db, schema) => guarded(async () => (await impl()).listTables(db, schema)),
+  generate: (req) => guarded(async () => (await impl()).generate(req)),
+  toYaml: (bundle) => guarded(async () => (await impl()).toYaml(bundle)),
+  enrich: (bundle) => guarded(async () => (await impl()).enrich(bundle)),
+  apply: (bundle, accepted) => guarded(async () => (await impl()).apply(bundle, accepted)),
+  runQuality: (bundle) => guarded(async () => (await impl()).runQuality(bundle)),
+  save: (bundle) => guarded(async () => (await impl()).save(bundle)),
+  listProducts: () => guarded(async () => (await impl()).listProducts()),
+  getProduct: (id) => guarded(async () => (await impl()).getProduct(id)),
+  exportOsi: (bundle) => guarded(async () => (await impl()).exportOsi(bundle)),
 }

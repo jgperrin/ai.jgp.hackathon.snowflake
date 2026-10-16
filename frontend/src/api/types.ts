@@ -184,8 +184,49 @@ export interface OsiExport {
   errors: string[]
 }
 
+/** Sign-in credentials; also the shape of GET /api/auth/demo. */
+export interface Credentials {
+  username: string
+  password: string
+}
+
+export interface SessionUser {
+  username: string
+}
+
+/** The signed-in user's Snowflake connection profile. The password is write-only and never comes back. */
+export interface Connection {
+  account: string | null
+  user: string | null
+  warehouse: string | null
+  database: string | null
+  role: string | null
+  passwordSet: boolean
+  connected: boolean
+  error: string | null
+}
+
+/** PUT body; an empty or absent password keeps the saved one. */
+export interface ConnectionUpdate {
+  account: string
+  user: string
+  password?: string
+  warehouse: string
+  database: string
+  role: string
+}
+
 /** Everything the UI can ask the backend; implemented over HTTP and by the dev mock. */
 export interface Api {
+  /** Demo account to show on the sign-in page, or null when the backend has none (404). */
+  demoCredentials(): Promise<Credentials | null>
+  login(credentials: Credentials): Promise<SessionUser>
+  logout(): Promise<void>
+  /** The current session's user, or null when not signed in (401). */
+  me(): Promise<SessionUser | null>
+  getConnection(): Promise<Connection>
+  /** Tests the connection first; a failing test throws ApiError(400) with Snowflake's reason and saves nothing. */
+  saveConnection(update: ConnectionUpdate): Promise<Connection>
   listDatabases(): Promise<Database[]>
   listSchemas(database: string): Promise<Schema[]>
   listTables(database: string, schema: string): Promise<Table[]>
