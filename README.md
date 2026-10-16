@@ -1,4 +1,10 @@
-# ai.jgp.hackathon.snowflake
+# Context Builder
+
+![Context Builder: analyzes your data and builds a context layer for AI with open standards](art/intro-github.png)
+
+Everybody wants to build a context layer for AI, but what does it look like, and how do you build and maintain it? Context Builder analyzes your Snowflake data and builds it using open standards: ODCS v3.2 data contracts, bundled as ODPS v1.1 data products, exported to OSI/Apache Ossie.
+
+_Repository: ai.jgp.hackathon.snowflake (Data in the D hackathon)._
 
 Hackathon project: an AI application built on **Snowflake Cortex**, with a Spring Boot
 backend and a React front end.
