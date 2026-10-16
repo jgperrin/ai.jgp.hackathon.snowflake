@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.16] - 2026-10-16
+
+### Changed
+- Analyze step and README: data-quality rules and SLAs are "collectively named Data QoS", linked to the Data QoS article (DIND#50).
+
 ## [0.10.15] - 2026-10-16
 
 ### Fixed
