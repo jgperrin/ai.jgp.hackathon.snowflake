@@ -2,141 +2,120 @@
 
 ![Context Builder: analyzes your data and builds a context layer for AI with open standards](art/intro-github.png)
 
-Everybody wants to build a context layer for AI, but what does it look like, and how do you build and maintain it? Context Builder analyzes your Snowflake data and builds it using open standards: ODCS v3.2 data contracts, bundled as ODPS v1.1 data products, exported to OSI/Apache Ossie.
+Everybody wants to build a context layer for AI, but what does it look like, and how do you build and maintain it? Context Builder analyzes your Snowflake data and builds it using open standards.
 
-_Repository: ai.jgp.hackathon.snowflake (Data in the D hackathon)._
+**From Snowflake schema to AI-ready data product.** Pick a database, tick the schemas and tables, and Context Builder:
 
-Hackathon project: an AI application built on **Snowflake Cortex**, with a Spring Boot
-backend and a React front end.
+1. **Generates** one [ODCS v3.2](https://github.com/bitol-io/open-data-contract-standard) data contract per schema and bundles them as the output ports of an [ODPS v1.1](https://github.com/bitol-io/open-data-product-standard) data product.
+2. **Profiles** the data with bounded SQL (sampled, one aggregate pass per table).
+3. **Asks Snowflake Cortex** (`AI_COMPLETE`) to propose the semantic layer: descriptions, business names, PII classification, tags, data quality rules and SLAs. Primary keys are proposed from profile evidence.
+4. **Keeps a human in the loop**: nothing reaches a contract until you accept (or edit) it.
+5. **Proves the rules**: every quality rule runs against Snowflake and shows pass/fail with the exact SQL.
+6. **Publishes**: saves the product, its contracts and the semantic model in Snowflake, and exports to **OSI/Apache Ossie** for BI and AI tools.
 
-The point of this scaffold is that it runs end to end in about two minutes, **without a
-Snowflake account**. A `local` profile serves stubbed answers so you can build and demo the
-UI first and wire up real credentials later.
+ODCS and ODPS are the source of truth; the OSI/Apache Ossie model is derived from them, one way.
 
-## Stack
+_Built for the Data in the D hackathon. Repository: `ai.jgp.hackathon.snowflake`, project code DIND._
 
-| Layer | Choice |
+## Try it
+
+**https://tools.actianlabs.com/contextbuilder/**
+
+Judges: sign in with **`jgp` / `odcs`**. The demo profile comes with a Snowflake connection to the hackathon lab account; you can change it under **Snowflake connection** in the header.
+
+A 3-minute walkthrough is in [`doc/DEMO.md`](doc/DEMO.md).
+
+## What it produced on the lab data
+
+Live runs against the hackathon's `FINSERV_DW` on 2026-10-16 (synthetic data provided by the organizers):
+
+| Run | Result |
 |---|---|
-| Backend | Java 21, Spring Boot 4.1.1, Maven (wrapper included) |
-| Frontend | React 19, Vite 8, TypeScript |
-| AI | Snowflake Cortex, called over JDBC — `AI_COMPLETE` |
+| `INSURANCE` (CLAIMS 9,740 rows, POLICIES 35,000 rows) | 104 Cortex proposals in 30 s, no warnings |
+| Same, after accepting all proposals | contract still valid against the ODCS v3.2.0 JSON schema |
+| Quality rules proposed by Cortex, run on the data | 12 of 12 pass, about 1 s |
+| `CORE` (4 tables) | proposals in 40 s, including primary keys such as `ACCOUNT_ID` (no nulls, ~82,699 distinct in 83,614 rows) |
 
-## Run it (no Snowflake needed)
+Cortex rediscovered invariants the dataset authors had planted, without being told about them, for example *"a claim cannot be reported before the incident occurred"* (`SELECT COUNT(*) FROM ${table} WHERE REPORTED_DATE < INCIDENT_DATE`, must be 0) and *"effective date precedes expiration date"* on policies.
+
+## How it maps
+
+| Snowflake | Standard |
+|---|---|
+| Database | ODPS v1.1.0 data product |
+| Schema | ODCS v3.2.0 data contract, exposed as one output port (`contractId`) |
+| Table or view | contract `schema[]` object, columns as `properties[]` |
+| Accepted proposals | `description`, `businessName`, `classification`, `tags`, `quality[]`, `slaProperties[]`, `primaryKey` |
+| Contracts | OSI/Apache Ossie `datasets[]`, fields, primary keys, inferred `relationships[]`; classification and quality ride along in an `ODCS` custom extension |
+
+Every generated document is validated against the official JSON schemas, bundled in `backend/src/main/resources/standards/` (ODCS v3.2.0, ODPS v1.1.0, Apache Ossie core `0.2.0.dev0`).
+
+## Architecture
+
+```
+React (Vite) ──/contextbuilder/api──▶ Spring Boot 4 (Java 21) ──JDBC──▶ Snowflake
+                                        ├─ catalog      INFORMATION_SCHEMA, SHOW ... KEYS
+                                        ├─ profile      sampled aggregate SQL
+                                        ├─ enrich       AI_COMPLETE, one call per table, 4 in parallel
+                                        ├─ quality      ODCS rules compiled to read-only SQL
+                                        ├─ store        <db>.DATA_PRODUCTS.ARTIFACTS (YAML + VARIANT, append-only)
+                                        └─ osi          OSI/Apache Ossie export
+```
+
+- **Per-user Snowflake connections.** Users sign in, then set their Snowflake account, user, password, warehouse, role and save database in their profile. Each user gets their own small connection pool; the password is write-only and never returned or logged.
+- **Safe by construction.** Object names are validated and quoted; profiling is sampled and bounded; SQL quality rules must be a single read-only `SELECT`; storage never updates or deletes.
+- **Defensive AI.** Cortex answers are parsed leniently, retried once if malformed, reduced to valid ODCS, and dropped if they reference columns that do not exist.
+
+## Run it locally
 
 Two terminals.
 
 ```bash
-# terminal 1 — backend on :8080
-cd backend
-./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+# backend on :8080; 'local' serves a FINSERV_DW-shaped stub, no Snowflake needed
+cd backend && ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 
-# terminal 2 — frontend on :5173
-cd frontend
-npm install
-npm run dev
+# frontend on :5173
+cd frontend && npm install && npm run dev
 ```
 
-Open <http://localhost:5173>, type a prompt, get an answer. The Vite dev server proxies
-`/api` to `:8080`, so the browser stays on one origin and CORS never comes up.
+Open <http://localhost:5173/contextbuilder/> and sign in with `jgp` / `odcs`.
 
-You can also hit the API directly:
+Against real Snowflake, start the backend without the `local` profile. Optionally pre-fill the demo user's connection with `backend/.env` (gitignored):
 
-```bash
-curl -s localhost:8080/api/cortex/complete \
-  -H 'Content-Type: application/json' \
-  -d '{"prompt":"hello"}'
+```properties
+SNOWFLAKE_ACCOUNT=<orgname-accountname>
+SNOWFLAKE_USER=<user>
+SNOWFLAKE_PASSWORD=<password>
+SNOWFLAKE_WAREHOUSE=<warehouse>
+SNOWFLAKE_DATABASE=<database where products are saved>
+CORTEX_MODEL=claude-sonnet-5
 ```
 
-```json
-{ "answer": "Stubbed answer (no Snowflake connection). You asked: hello" }
-```
+The role needs `USE AI FUNCTIONS` and `CORTEX_USER` (or `AI_FUNCTIONS_USER`) to call Cortex, read access to the data, and `CREATE SCHEMA` on the save database.
 
-## Run it against real Cortex
+No backend at all: `cd frontend && npm run dev:mock`.
 
-Set these, then start the backend **without** the `local` profile:
+## API
 
-| Variable | Notes |
+| Endpoint | Purpose |
 |---|---|
-| `SNOWFLAKE_ACCOUNT` | Full account identifier, e.g. `myorg-myaccount` or `xy12345.us-east-1`. `.snowflakecomputing.com` is appended for you. |
-| `SNOWFLAKE_USER` | |
-| `SNOWFLAKE_PASSWORD` | |
-| `SNOWFLAKE_WAREHOUSE` | |
-| `SNOWFLAKE_DATABASE` | |
-| `SNOWFLAKE_SCHEMA` | Optional |
-| `SNOWFLAKE_ROLE` | Optional |
-| `CORTEX_MODEL` | Defaults to `claude-sonnet-5` |
-
-```bash
-cd backend
-SNOWFLAKE_ACCOUNT=myorg-myaccount \
-SNOWFLAKE_USER=jgp \
-SNOWFLAKE_PASSWORD=... \
-./mvnw spring-boot:run
-```
-
-The same browser flow now returns live Cortex output.
-
-## What the Snowflake side needs
-
-- **Privileges.** The role needs the `USE AI FUNCTIONS` account privilege and either
-  `CORTEX_USER` or `AI_FUNCTIONS_USER`.
-- **A model, always.** There is no documented server-side default, so `CORTEX_MODEL` is
-  sent explicitly on every call. Check what your region actually offers with:
-  ```sql
-  SHOW CORTEX BASE MODELS;
-  ```
-  That also reports `lifecycle_status`, `legacy_date` and `eol_date`, which is worth
-  checking before you commit to a model — this space moves fast.
-- **Cost.** Cortex is billed by tokens consumed, and model choice swings that a lot. Watch
-  `CORTEX_FUNCTIONS_USAGE_HISTORY` and `METERING_DAILY_HISTORY`.
-
-> **Function naming.** This project uses `AI_COMPLETE`. The older
-> `SNOWFLAKE.CORTEX.COMPLETE` is legacy and leaves its back-compat window during 2026
-> (`COMPLETE`/`TRY_COMPLETE` → `AI_COMPLETE`). If you copy older sample code from the web,
-> that is the rename you will trip over.
-
-## Layout
-
-```
-backend/
-  src/main/java/ai/jgp/hackathon/snowflake/
-    cortex/    CortexClient (the seam), JdbcCortexClient, StubCortexClient, controller
-    config/    CortexProperties, SnowflakeConfig (Hikari pool)
-frontend/
-  src/api/cortex.ts   the one place that knows the backend's shape
-  src/App.tsx
-```
-
-### The seam
-
-`CortexClient` is the only thing the rest of the app knows about:
-
-```java
-public interface CortexClient {
-    String complete(String prompt);
-}
-```
-
-Spring picks the implementation by profile — `JdbcCortexClient` normally,
-`StubCortexClient` under `local`. Both return the same response shape, so the frontend
-cannot tell them apart, and swapping in a REST-backed implementation later means adding a
-class rather than touching callers.
-
-## Notes for whoever picks this up next
-
-- **Streaming is not available over JDBC.** SQL `AI_COMPLETE` is batch/throughput shaped;
-  if you want tokens streaming into the UI you need the Cortex REST API
-  (`POST /api/v2/cortex/v1/chat/completions`), which means a second auth path.
-- **Cortex Analyst has no SQL function** — it is REST-only. Cortex Search is reachable both
-  ways. If the hackathon idea heads toward natural-language-over-data, this is the fork in
-  the road, and it is worth deciding early rather than discovering late.
-- **Snowflake JDBC 4.x moved its public API** to `net.snowflake.client.api.*`. The driver is
-  deliberately *not* pinned by class name in `SnowflakeConfig`; Hikari resolves it from the
-  `jdbc:snowflake://` URL instead, so a driver upgrade will not break startup.
+| `GET /api/auth/demo`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` | sign-in |
+| `GET` / `PUT /api/me/connection` | the user's Snowflake connection (tested before saving) |
+| `GET /api/catalog/databases[/{db}/schemas[/{schema}/tables]]` | catalog |
+| `POST /api/profile` | bounded profile of selected tables |
+| `POST /api/products/generate`, `POST /api/products/yaml` | ODCS + ODPS generation, YAML |
+| `POST /api/enrich`, `POST /api/products/apply` | Cortex proposals, apply the accepted ones |
+| `POST /api/quality/run` | execute quality rules |
+| `POST /api/products/save`, `GET /api/products[/{id}]` | store in Snowflake, list, reload |
+| `POST /api/export/osi` | OSI/Apache Ossie export |
 
 ## Tests
 
 ```bash
-cd backend && ./mvnw test     # context loads, stub client wired, endpoint answers
-cd frontend && npm run build  # type-checks and builds
+cd backend && ./mvnw verify      # tests + JaCoCo gate (60% minimum)
+cd frontend && npm run lint && npm run build
 ```
+
+## Deploy
+
+Manual, by design: see [`deploy/README.md`](deploy/README.md).
