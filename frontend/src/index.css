@@ -1602,3 +1602,38 @@ button:disabled {
   background: rgba(55, 65, 81, 0.95);
   color: #fff;
 }
+
+/* Database picker (DIND#62): the schema-list rows, one radio each, system rows muted. */
+.db-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.db-tools input[type='text'] {
+  flex: 1 1 16rem;
+  width: auto;
+}
+
+.db-list {
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.db-list .schema-row {
+  display: flex;
+}
+
+.schema-item.is-system:not(.is-picked) .schema-name,
+.schema-item.is-system:not(.is-picked) .schema-comment {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+input[type='radio'] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--primary);
+}

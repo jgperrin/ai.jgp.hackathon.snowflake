@@ -34,7 +34,11 @@ class JdbcCatalogService implements CatalogService {
     @Override
     public List<DatabaseInfo> databases() {
         return jdbc.query("SHOW DATABASES",
-                (rs, i) -> new DatabaseInfo(rs.getString("name"), blankToNull(rs.getString("comment"))));
+                (rs, i) -> {
+                    String name = rs.getString("name");
+                    return new DatabaseInfo(name, blankToNull(rs.getString("comment")),
+                            SystemDatabases.isSystem(name));
+                });
     }
 
     @Override

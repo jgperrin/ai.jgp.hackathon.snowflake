@@ -24,6 +24,8 @@ export function SourceStep({ busy, onGenerate }: Props) {
   const [schemas, setSchemas] = useState<Schema[] | null>(null)
   const [picked, setPicked] = useState<Record<string, SchemaState>>({})
   const [error, setError] = useState('')
+  const [filter, setFilter] = useState('')
+  const [showSystem, setShowSystem] = useState(false)
 
   useEffect(() => {
     api.listDatabases().then(setDatabases, (cause) => setError(messageOf(cause)))
@@ -86,6 +88,18 @@ export function SourceStep({ busy, onGenerate }: Props) {
     patch(schema, { selected: new Set(on ? (state.tables ?? []).map((t) => t.name) : []) })
   }
 
+  // The picked database stays listed even when the toggle or the filter would hide it, so hiding a
+  // row never silently drops the selection (and the group keeps its checked radio as the tab stop).
+  const needle = filter.trim().toLowerCase()
+  const matches = (d: Database) =>
+    !needle || d.name.toLowerCase().includes(needle) || (d.comment ?? '').toLowerCase().includes(needle)
+  const allDatabases = databases ?? []
+  const systemCount = allDatabases.filter((d) => d.system).length
+  const shownDatabases = allDatabases.filter(
+    (d) => d.name === database || (matches(d) && (showSystem || !d.system)),
+  )
+  const anyMatch = allDatabases.some((d) => matches(d) && (showSystem || !d.system))
+
   const chosen = (schemas ?? [])
     .filter((s) => picked[s.name]?.tables && picked[s.name].selected.size > 0)
     .map((s) => ({ schema: s.name, tables: [...picked[s.name].selected] }))
@@ -97,21 +111,68 @@ export function SourceStep({ busy, onGenerate }: Props) {
       <ErrorBanner error={error} onDismiss={() => setError('')} />
 
       <div className="card">
-        <label className="field-label" htmlFor="database">
+        <div className="field-label" id="database-label">
           Snowflake database <span className="hint">becomes one ODPS data product</span>
-        </label>
+        </div>
         {databases === null && !error ? (
           <Spinner label="Reading catalog…" />
         ) : (
-          <select id="database" value={database} onChange={(e) => void chooseDatabase(e.target.value)}>
-            <option value="">Choose a database…</option>
-            {(databases ?? []).map((d) => (
-              <option key={d.name} value={d.name}>
-                {d.name}
-                {d.comment ? ` — ${d.comment}` : ''}
-              </option>
-            ))}
-          </select>
+          <>
+            <div className="db-tools">
+              <input
+                type="text"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                placeholder="Filter databases…"
+                aria-label="Filter databases"
+              />
+              {systemCount > 0 && (
+                <label className="check">
+                  <input type="checkbox" checked={showSystem} onChange={(e) => setShowSystem(e.target.checked)} />
+                  <span>
+                    Show system databases ({systemCount} {showSystem ? 'shown' : 'hidden'})
+                  </span>
+                </label>
+              )}
+            </div>
+            {allDatabases.length === 0 && <p className="muted">No databases visible to this connection.</p>}
+            {allDatabases.length > 0 && !anyMatch && (
+              <p className="muted">
+                {needle ? `No databases match “${filter.trim()}”.` : 'Only system databases here.'}
+                {!showSystem && systemCount > 0 && ' System databases are hidden.'}
+              </p>
+            )}
+            <ul className="schema-list db-list" role="radiogroup" aria-labelledby="database-label">
+              {shownDatabases.map((d) => {
+                const classes = ['schema-item']
+                if (d.name === database) classes.push('is-picked')
+                if (d.system) classes.push('is-system')
+                return (
+                  <li key={d.name} className={classes.join(' ')}>
+                    <label className="check schema-row">
+                      <input
+                        type="radio"
+                        name="database"
+                        value={d.name}
+                        checked={d.name === database}
+                        onChange={() => void chooseDatabase(d.name)}
+                        onKeyDown={(e) => {
+                          // Native radios pick on arrows and Space; Enter picks too, as the issue asks.
+                          if (e.key === 'Enter' && d.name !== database) {
+                            e.preventDefault()
+                            void chooseDatabase(d.name)
+                          }
+                        }}
+                      />
+                      <span className="schema-name">{d.name}</span>
+                      {d.comment && <span className="muted schema-comment">{d.comment}</span>}
+                      {d.system && <span className="pill">system</span>}
+                    </label>
+                  </li>
+                )
+              })}
+            </ul>
+          </>
         )}
       </div>
 

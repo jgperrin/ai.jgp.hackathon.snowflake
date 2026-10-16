@@ -16,7 +16,8 @@ class StubCatalogService implements CatalogService {
 
     @Override
     public List<DatabaseInfo> databases() {
-        return List.of(new DatabaseInfo(Finserv.DATABASE, "Stub: financial services & insurance"));
+        return List.of(new DatabaseInfo(Finserv.DATABASE, "Stub: financial services & insurance",
+                SystemDatabases.isSystem(Finserv.DATABASE)));
     }
 
     @Override
