@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.9.0] - 2026-10-16
+
+### Added
+- `POST /api/export/osi`: one-way export of the product and its contracts to an OSI/Apache Ossie semantic model (`version: 0.2.0.dev0`), validated against the bundled `ossie-schema.json` (DIND#7).
+- Datasets from contract schema objects (`source` = `database.schema.table`, primary keys, descriptions, business names as `ai_context.synonyms`); fields with Ossie datatypes; ODCS classification, tags and quality rules carried in an `ODCS` custom extension.
+- Relationships inferred from matching key names (flagged as inferred, not declared).
+
 ## [0.8.0] - 2026-10-16
 
 ### Added
