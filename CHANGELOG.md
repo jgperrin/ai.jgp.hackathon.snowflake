@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.6.0] - 2026-10-16
+
+### Added
+- `POST /api/enrich`: profiles every table in the bundle and asks Cortex (`AI_COMPLETE`, one call per table, 4 in parallel) for descriptions, business names, classifications (PII → `restricted` + `pii` tag), ODCS quality rules and SLAs; returns reviewable proposals with rationale (DIND#4).
+- `POST /api/products/apply`: writes only the accepted proposals into a copy of the contracts and re-validates against ODCS v3.2.0.
+- Defensive parsing: malformed answers become warnings, unknown columns are dropped, quality rules are reduced to valid ODCS (one operator) and SQL rules must be a single read-only SELECT using `${table}`.
+
 ## [0.5.0] - 2026-10-16
 
 ### Added
