@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.34] - 2026-10-16
+
+### Changed
+- The standards pills under the headline are links (DIND#94): Bitol ODCS v3.2
+  and Bitol ODPS v1.1 open the Bitol repositories README.md already cites, and
+  OSI/Apache Ossie opens `apache/ossie`. New tab, same look, visible focus ring.
+
 ## [0.10.33] - 2026-10-16
 
 ### Fixed

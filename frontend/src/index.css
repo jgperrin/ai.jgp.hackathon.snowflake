@@ -1998,3 +1998,8 @@ input[type='radio'] {
 .about-steps {
   color: var(--heading);
 }
+
+/* Standards pills are links (DIND#94) but keep the badge look: no underline, badge colour. */
+.standards a.badge {
+  text-decoration: none;
+}
