@@ -63,6 +63,8 @@
   --warn: #92400e; /* amber-800 */
   --warn-bg: #fffbeb; /* amber-50 */
   --warn-ring: rgb(217 119 6 / 0.3);
+  --dot-ok: #16a34a; /* green-600: the avatar's status dot */
+  --dot-warn: #d97706; /* amber-600 */
   --danger: #b91c1c; /* red-700 */
   --danger-bg: #fef2f2; /* red-50 */
   --danger-ring: rgb(220 38 38 / 0.25);
@@ -114,6 +116,8 @@
     --warn: #fcd34d; /* amber-300 */
     --warn-bg: rgb(217 119 6 / 0.14);
     --warn-ring: rgb(251 191 36 / 0.3);
+    --dot-ok: #4ade80; /* green-400 */
+    --dot-warn: #fbbf24; /* amber-400 */
     --danger: #fca5a5; /* red-300 */
     --danger-bg: rgb(220 38 38 / 0.14);
     --danger-ring: rgb(248 113 113 / 0.3);
@@ -148,6 +152,8 @@
   --warn: #fcd34d; /* amber-300 */
   --warn-bg: rgb(217 119 6 / 0.14);
   --warn-ring: rgb(251 191 36 / 0.3);
+  --dot-ok: #4ade80; /* green-400 */
+  --dot-warn: #fbbf24; /* amber-400 */
   --danger: #fca5a5; /* red-300 */
   --danger-bg: rgb(220 38 38 / 0.14);
   --danger-ring: rgb(248 113 113 / 0.3);
@@ -288,16 +294,6 @@ a {
   gap: 0.5rem;
 }
 
-.account-user {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.account-user strong {
-  color: var(--text);
-  font-weight: 600;
-}
-
 /* System / Light / Dark switch (DIND#59): a segmented group of icon buttons; the pressed one is filled. */
 .appearance-toggle {
   display: inline-flex;
@@ -332,6 +328,117 @@ a {
   box-shadow:
     var(--shadow-sm),
     inset 0 0 0 1px var(--border-strong);
+}
+
+/* Profile menu (DIND#69): initials avatar + name as the trigger, a popover menu below it. */
+.profile-menu {
+  position: relative;
+}
+
+.profile-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 32px;
+  padding: 0.125rem 0.5rem 0.125rem 0.25rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.profile-trigger:hover,
+.profile-trigger[aria-expanded='true'] {
+  background: var(--surface-2);
+  color: var(--heading);
+}
+
+.profile-avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-on-soft);
+  box-shadow: inset 0 0 0 1px var(--accent-soft-border);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* The connection state at a glance: green connected, amber anything else; the ring cuts it out of the avatar. */
+.profile-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px var(--header-bg);
+}
+
+.profile-dot-ok {
+  background: var(--dot-ok);
+}
+
+.profile-dot-warn {
+  background: var(--dot-warn);
+}
+
+.profile-name {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.profile-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  min-width: 240px;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+}
+
+.profile-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.625rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.profile-item:hover,
+.profile-item:focus {
+  background: var(--surface-2);
+  color: var(--heading);
+}
+
+.profile-separator {
+  height: 1px;
+  margin: 0.25rem 0;
+  background: var(--border);
 }
 
 .content {

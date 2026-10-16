@@ -6,6 +6,8 @@ import { ConnectionCard } from './components/ConnectionCard'
 import { ConnectionPanel } from './components/ConnectionPanel'
 import { Footer } from './components/Footer'
 import { HelpButton } from './components/HelpButton'
+import { ProfileMenu } from './components/ProfileMenu'
+import type { ConnectionStatus } from './components/ProfileMenu'
 import { SignIn } from './components/SignIn'
 import { BrandMark, LoadingState } from './components/common'
 import { Wizard } from './Wizard'
@@ -26,6 +28,8 @@ const NOT_CONNECTED_YET = 'No Snowflake connection is saved for your profile yet
 export default function App() {
   const [user, setUser] = useState<Session>(undefined)
   const [connected, setConnected] = useState<ConnectionState>(null)
+  // True when no connection profile is saved at all (the menu says "Needs setup" rather than "Not connected").
+  const [needsSetup, setNeedsSetup] = useState(false)
   // null: panel closed; a string: open, with the reason it opened on its own ('' when the user opened it).
   const [panel, setPanel] = useState<string | null>(null)
   // Drives the footer heart: false only when the session check could not reach the backend at all.
@@ -72,6 +76,7 @@ export default function App() {
       (connection) => {
         if (!live) return
         setConnected(connection.state !== 'NONE')
+        setNeedsSetup(connection.state === 'NONE')
         if (connection.state === 'NONE' || connection.error) {
           setPanel(connection.error || NOT_CONNECTED_YET)
         }
@@ -94,6 +99,9 @@ export default function App() {
     setConnected(null)
     setUser(null)
   }
+
+  const connectionStatus: ConnectionStatus =
+    connected === null ? null : connected ? 'connected' : needsSetup ? 'needs-setup' : 'not-connected'
 
   const mockStrip = MOCK && <div className="mock-strip">Mock backend · illustrative sample data, not Snowflake</div>
   const footer = <Footer healthy={backendUp} />
@@ -133,20 +141,15 @@ export default function App() {
           </a>
           <span className="spacer" />
           <div className="account">
-            <span className="account-user">
-              Signed in as <strong>{user.username}</strong>
-            </span>
             <AppearanceToggle />
             <HelpButton user={user.username} connected={connected} />
-            <button type="button" className="btn-secondary" onClick={() => setPanel('')}>
-              <span className={connected ? 'badge badge-ok' : 'badge badge-gray'}>
-                {connected ? '● ready' : '○ not connected'}
-              </span>
-              Snowflake connection
-            </button>
-            <button type="button" className="btn-ghost" onClick={() => void signOut()}>
-              Sign out
-            </button>
+            {/* Rightmost (DIND#69): the Snowflake connection and Sign out live in the profile menu. */}
+            <ProfileMenu
+              username={user.username}
+              status={connectionStatus}
+              onOpenConnection={() => setPanel('')}
+              onSignOut={() => void signOut()}
+            />
           </div>
         </div>
       </header>
