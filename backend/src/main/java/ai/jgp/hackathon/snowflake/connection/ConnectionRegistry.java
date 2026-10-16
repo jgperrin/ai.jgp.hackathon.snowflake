@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import ai.jgp.hackathon.snowflake.auth.AuthProperties;
 import ai.jgp.hackathon.snowflake.config.CortexProperties;
+import ai.jgp.hackathon.snowflake.connection.ConnectionModel.Defaults;
 import ai.jgp.hackathon.snowflake.connection.ConnectionModel.NoConnectionException;
 import ai.jgp.hackathon.snowflake.connection.ConnectionModel.Profile;
 import ai.jgp.hackathon.snowflake.connection.ConnectionModel.Update;
@@ -30,9 +31,12 @@ public class ConnectionRegistry {
     private final Map<String, Profile> profiles = new ConcurrentHashMap<>();
     private final Map<String, DataSource> pools = new ConcurrentHashMap<>();
     private final Map<String, String> errors = new ConcurrentHashMap<>();
+    private final Defaults defaults;
 
     ConnectionRegistry(SnowflakeConnector connector, CortexProperties server, AuthProperties auth) {
         this.connector = connector;
+        this.defaults = new Defaults(blank(server.account()), blank(server.user()), blank(server.warehouse()),
+                blank(server.database()), blank(server.role()));
         if (server.account() != null && !server.account().isBlank() && auth.demoUser() != null) {
             profiles.put(auth.demoUser(), new Profile(trim(server.account()), trim(server.user()),
                     server.password() == null || server.password().isEmpty() ? null : server.password(),
@@ -44,6 +48,11 @@ public class ConnectionRegistry {
     public View view(String user) {
         Profile p = profiles.get(user);
         return p == null ? View.empty() : p.view(pools.containsKey(user), errors.get(user));
+    }
+
+    /** What the server's settings would prefill; the password is not part of it. */
+    public Defaults defaults() {
+        return defaults;
     }
 
     /** The profile of the current user, or null. */
@@ -102,6 +111,11 @@ public class ConnectionRegistry {
                 throw e;
             }
         }
+    }
+
+    private static String blank(String s) {
+        String t = trim(s);
+        return t == null ? "" : t;
     }
 
     private static String trim(String s) {
