@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.5.0] - 2026-10-16
+
+### Added
+- Frontend "Contract Forge" wizard, replacing the Cortex prompt demo (DIND#8):
+  - **Source**: database picker, schema checkboxes (one ODCS contract each), expandable table checkboxes with kind, column and row counts; all tables selected by default.
+  - **Generate**: calls `POST /api/products/generate`, renders the ODPS product and each ODCS contract as YAML tabs (`POST /api/products/yaml`), validation badge plus a visible error table, Copy / Download per document and Download all.
+- `src/api/` typed client for the whole backend contract; backend errors (`{message}` or ProblemDetail `{detail}`) surface as visible banners.
+- `npm run dev:mock`: dev-only in-memory backend with an illustrative `FINSERV_DW` sample, loaded through a guarded dynamic import so it never ships in a build.
+- System light/dark appearance via `prefers-color-scheme`; projector-friendly sizing.
+
+### Removed
+- `src/api/cortex.ts` prompt demo client.
+
 ## [0.4.0] - 2026-10-16
 
 ### Added
