@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MOCK, api } from './api'
+import { api } from './api'
 import type { Bundle, BundleYaml, GenerateRequest } from './api'
 import { AnalyzeStep } from './components/AnalyzeStep'
 import { DocumentsView } from './components/DocumentsView'
@@ -19,7 +19,7 @@ const STEPS = [
 
 type StepKey = (typeof STEPS)[number]['key']
 
-export default function App() {
+export function Wizard() {
   const [step, setStep] = useState<StepKey>('source')
   const [bundle, setBundle] = useState<Bundle | null>(null)
   // Bumped on every new or loaded bundle, so per-bundle step state (proposals, DQ runs) starts fresh.
@@ -64,21 +64,7 @@ export default function App() {
   const nextStep = STEPS[index + 1]
 
   return (
-    <div className="app">
-      {MOCK && <div className="mock-strip">Mock backend · illustrative sample data, not Snowflake</div>}
-      <header className="masthead">
-        <div className="brand">
-          <span className="logo" aria-hidden="true">◆</span>
-          <span className="brand-name">Context Builder</span>
-        </div>
-        <h1>From Snowflake schema to data product</h1>
-        <p className="standards">
-          <span>ODCS v3.2</span>
-          <span>ODPS v1.1</span>
-          <span>OSI/Apache Ossie</span>
-        </p>
-      </header>
-
+    <>
       <nav className="stepper" aria-label="Wizard steps">
         {STEPS.map((s, i) => (
           <button
@@ -139,6 +125,6 @@ export default function App() {
           </div>
         )}
       </main>
-    </div>
+    </>
   )
 }
