@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.8] - 2026-10-16
+
+### Changed
+- Headline now reads "From Snowflake schema to AI-ready data product" (wizard and sign-in) (DIND#34).
+
+### Added
+- Backend sign-in (`/api/auth/*`, demo account `jgp` / `odcs` overridable by `CONTEXTBUILDER_AUTH_DEMO_USER` / `CONTEXTBUILDER_AUTH_DEMO_PASSWORD`) and a per-user Snowflake connection profile (`/api/me/connection`) with one pool per user; the app now boots with no Snowflake settings, and `SNOWFLAKE_*` only pre-fills the demo user's profile. Shipped inside v0.10.5 without its own entry (DIND#27).
+
 ## [0.10.7] - 2026-10-16
 
 ### Added
