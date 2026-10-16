@@ -1,5 +1,6 @@
 import { ApiError, NO_CONNECTION } from './errors'
 import { httpApi } from './http'
+import { recordError } from '../lib/recentErrors'
 import type { Api } from './types'
 
 export * from './types'
@@ -50,6 +51,9 @@ async function guarded<T>(call: () => Promise<T>): Promise<T> {
       } else if (cause.status === 409 && cause.code === NO_CONNECTION) {
         listeners.forEach((l) => l({ kind: 'no-connection', message: cause.message }))
       }
+    } else {
+      // ApiErrors are recorded where they are raised (http.ts); anything else is a bug worth reporting.
+      recordError(-1, 'client', String(cause))
     }
     throw cause
   }
