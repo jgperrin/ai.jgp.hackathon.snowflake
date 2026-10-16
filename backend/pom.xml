@@ -13,7 +13,7 @@
 
     <groupId>ai.jgp.hackathon</groupId>
     <artifactId>snowflake</artifactId>
-    <version>0.10.0</version>
+    <version>0.10.1</version>
     <name>ai.jgp.hackathon.snowflake</name>
     <description>AI hackathon project on Snowflake Cortex</description>
 
@@ -81,7 +81,9 @@
                     <!-- Thin adapters that only run against a live Snowflake account. SQL
                          building lives in plain classes, which are covered. -->
                     <excludes>
-                        <exclude>**/Jdbc*</exclude>
+                        <exclude>**/Jdbc*Service*</exclude>
+                        <exclude>**/JdbcSqlRunner*</exclude>
+                        <exclude>**/JdbcArtifactStore*</exclude>
                         <exclude>**/SnowflakeConfig*</exclude>
                     </excludes>
                 </configuration>

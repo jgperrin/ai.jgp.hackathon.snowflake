@@ -19,3 +19,8 @@ snowflake:
   schema: ${SNOWFLAKE_SCHEMA:}
   role: ${SNOWFLAKE_ROLE:}
   model: ${CORTEX_MODEL:claude-sonnet-5}
+
+logging:
+  level:
+    # The driver probes cloud metadata endpoints (EC2, GCP, Azure) at startup and logs each miss as ERROR.
+    net.snowflake.client.internal.jdbc.RestRequest: OFF
