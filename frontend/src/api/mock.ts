@@ -356,7 +356,10 @@ async function seedSaves() {
   seeded = true
   const bundle = await dataApi.generate({
     database: 'FINSERV_DW',
-    schemas: [{ schema: 'CORE', tables: [] }, { schema: 'RISK', tables: [] }],
+    schemas: ['CORE', 'RISK'].map((schema) => ({
+      schema,
+      tables: (TABLES[`FINSERV_DW.${schema}`] ?? []).map((t) => t.name),
+    })),
   })
   await recordSave(bundle, new Date(Date.now() - 26 * 3600_000).toISOString(), 'JGP')
 }

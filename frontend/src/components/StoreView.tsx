@@ -23,13 +23,22 @@ export function StoreView({ onOpen, onBack }: Props) {
   const [selected, setSelected] = useState<{ saveId: string; index: number } | null>(null)
   const [loadingId, setLoadingId] = useState('')
   const [error, setError] = useState('')
+  // True when the list could not be read, so an empty table is not mistaken for an empty store.
+  const [failed, setFailed] = useState(false)
 
   const load = useCallback(
     () =>
-      api.listSaves().then(setSaves, (cause: unknown) => {
-        setSaves([])
-        setError(messageOf(cause))
-      }),
+      api.listSaves().then(
+        (list) => {
+          setFailed(false)
+          setSaves(list)
+        },
+        (cause: unknown) => {
+          setFailed(true)
+          setSaves([])
+          setError(messageOf(cause))
+        },
+      ),
     [],
   )
 
@@ -107,6 +116,10 @@ export function StoreView({ onOpen, onBack }: Props) {
           </div>
           {saves === null ? (
             <Spinner label="Loading…" />
+          ) : failed ? (
+            <p className="muted">
+              Could not read <span className="mono">{table}</span>. Check your Snowflake connection, then Refresh.
+            </p>
           ) : saves.length === 0 ? (
             <p className="muted">
               Nothing has been saved to <span className="mono">{table}</span> yet. Save a product in step 5, Publish,

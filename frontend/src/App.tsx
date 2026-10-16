@@ -200,7 +200,8 @@ export default function App() {
       <main className={view === 'store' ? 'content is-store' : 'content'}>
         {view === 'store' && (
           <div className="store-pane">
-            <StoreView onOpen={openSave} onBack={() => setView('wizard')} />
+            {/* Remounted when the connection changes, so saving one reloads the store it points at. */}
+            <StoreView key={String(connected)} onOpen={openSave} onBack={() => setView('wizard')} />
           </div>
         )}
         <div className="page-header">
