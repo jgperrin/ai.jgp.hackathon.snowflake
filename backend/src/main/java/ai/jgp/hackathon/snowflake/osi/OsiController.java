@@ -27,6 +27,10 @@ class OsiController {
 
     @PostMapping("/api/export/osi")
     OsiExport export(@RequestBody Bundle bundle) {
+        ai.jgp.hackathon.snowflake.enrich.EnrichService.requireContracts(bundle);
+        if (bundle.product() == null) {
+            throw new IllegalArgumentException("Expected a bundle with a product");
+        }
         Map<String, Object> model = OsiExporter.export(bundle.product(), bundle.contracts());
         List<String> errors = validator.validateOsi(model);
         return new OsiExport(yaml.write(model), errors.isEmpty(), errors);

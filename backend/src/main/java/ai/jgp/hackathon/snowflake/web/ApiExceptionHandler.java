@@ -23,6 +23,16 @@ class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage(), "code", "NO_CONNECTION"));
     }
 
+    @ExceptionHandler(ai.jgp.hackathon.snowflake.enrich.EnrichJobs.UnknownJobException.class)
+    ResponseEntity<Map<String, String>> unknownJob(RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
+    }
+
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    ResponseEntity<Map<String, String>> unreadable(Exception e) {
+        return ResponseEntity.badRequest().body(Map.of("message", "Request body is not valid JSON for this endpoint"));
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     ResponseEntity<Map<String, String>> badRequest(IllegalArgumentException e) {
         return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));

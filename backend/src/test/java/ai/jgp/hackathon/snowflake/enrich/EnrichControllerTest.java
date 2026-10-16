@@ -84,4 +84,30 @@ class EnrichControllerTest {
         assertThat(out.toString()).contains("tags=[pii]").contains("classification=restricted");
         assertThat(contracts.toString()).doesNotContain("pii");
     }
+
+    @Test
+    void jobEndpointsAndBadBodies() throws Exception {
+        String started = mockMvc.perform(post("/api/enrich/jobs").contentType(MediaType.APPLICATION_JSON).content(bundle()))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.status").exists())
+                .andReturn().getResponse().getContentAsString();
+        String id = (String) json.readValue(started, Map.class).get("id");
+        String status = "RUNNING";
+        for (int i = 0; i < 200 && "RUNNING".equals(status); i++) {
+            Thread.sleep(25);
+            status = (String) json.readValue(mockMvc.perform(
+                    org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/enrich/jobs/" + id))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(), Map.class).get("status");
+        }
+        assertThat(status).isEqualTo("DONE");
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/enrich/jobs/nope"))
+                .andExpect(status().isNotFound());
+        String notABundle = "{\"code\":\"NO_CONNECTION\",\"message\":\"x\"}";
+        for (String path : List.of("/api/enrich", "/api/enrich/jobs", "/api/quality/run", "/api/export/osi")) {
+            mockMvc.perform(post(path).contentType(MediaType.APPLICATION_JSON).content(notABundle))
+                    .andExpect(status().isBadRequest());
+        }
+        mockMvc.perform(post("/api/enrich").contentType(MediaType.APPLICATION_JSON).content("not json"))
+                .andExpect(status().isBadRequest());
+    }
 }
