@@ -8,7 +8,8 @@ public final class CatalogModel {
     private CatalogModel() {
     }
 
-    public record DatabaseInfo(String name, String comment) {
+    /** {@code system} is true for Snowflake's own databases; see {@link SystemDatabases}. */
+    public record DatabaseInfo(String name, String comment, boolean system) {
     }
 
     public record SchemaInfo(String name, String comment) {
