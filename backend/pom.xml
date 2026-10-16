@@ -13,7 +13,7 @@
 
     <groupId>ai.jgp.hackathon</groupId>
     <artifactId>snowflake</artifactId>
-    <version>0.10.18</version>
+    <version>0.10.19</version>
     <name>ai.jgp.hackathon.snowflake</name>
     <description>AI hackathon project on Snowflake Cortex</description>
 

@@ -78,11 +78,32 @@ grep -q '/contextbuilder/api' "$BUILD_DIR/frontend/dist/assets/"*.js \
   || die "the bundle has no /contextbuilder/api path — API calls would hit the domain root"
 
 say "Uploading backend jar"
-scp -q "$BUILD_DIR/backend/target/${JAR}" "${HOST}:${APP_DIR}/${JAR}" || die "jar upload failed"
-ssh "$HOST" "set -e
-  chmod 644 '${APP_DIR}/${JAR}'
-  cp '${APP_DIR}/${JAR}' '${APP_DIR}/contextbuilder.jar'
-  echo '  installed as contextbuilder.jar (previous version kept for rollback)'"
+# Upload under a .part name and rename only once the checksum matches.
+#
+# scp'ing straight to the final path leaves a truncated or zero-byte file there
+# when the transfer dies mid-flight. That is not hypothetical: on 2026-10-16 a
+# transient failure left a zero-byte snowflake-0.10.18.jar in the store, where
+# the prune counted it as a release and `rollback.sh 0.10.18` would have copied
+# that empty file over the running jar.
+LOCAL_JAR="$BUILD_DIR/backend/target/${JAR}"
+LOCAL_SHA=$(shasum -a 256 "$LOCAL_JAR" | cut -d' ' -f1)
+scp -q "$LOCAL_JAR" "${HOST}:${APP_DIR}/${JAR}.part" || {
+  ssh "$HOST" "rm -f '${APP_DIR}/${JAR}.part'" || true
+  die "jar upload failed"
+}
+ssh "$HOST" "APP_DIR='${APP_DIR}' JAR='${JAR}' WANT='${LOCAL_SHA}' bash -s" <<'REMOTE'
+set -e
+GOT=$(sha256sum "$APP_DIR/$JAR.part" | cut -d' ' -f1)
+if [ "$GOT" != "$WANT" ]; then
+  rm -f "$APP_DIR/$JAR.part"
+  printf 'checksum mismatch — wanted %s, got %s. Partial upload removed.\n' "$WANT" "$GOT" >&2
+  exit 1
+fi
+mv "$APP_DIR/$JAR.part" "$APP_DIR/$JAR"
+chmod 644 "$APP_DIR/$JAR"
+cp "$APP_DIR/$JAR" "$APP_DIR/contextbuilder.jar"
+printf '  verified %s, installed as contextbuilder.jar\n' "$(printf '%s' "$GOT" | cut -c1-16)"
+REMOTE
 
 say "Uploading static bundle"
 # /var/www is www-data-owned, so this stages in /tmp and installs with sudo.

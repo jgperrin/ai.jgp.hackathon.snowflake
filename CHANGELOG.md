@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.19] - 2026-10-16
+
+### Fixed
+- `deploy.sh` uploads the jar to a `.part` name and renames it into place only
+  after a sha256 check (DIND#56). A transient `scp` failure while shipping
+  v0.10.18 left a **zero-byte** `snowflake-0.10.18.jar` in the store, where the
+  prune counted it as a release and `rollback.sh 0.10.18` would have copied that
+  empty file over the running jar.
+
+### Note
+- No artifact change: ops files only.
+
 ## [0.10.18] - 2026-10-16
 
 ### Fixed
