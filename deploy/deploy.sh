@@ -83,18 +83,18 @@ ssh "$HOST" "systemctl is-active '${SERVICE}'" \
 say "Smoke: backend health on the loopback port"
 ssh "$HOST" "curl -fsS http://127.0.0.1:${APP_PORT}/actuator/health" && echo
 
-say "Smoke: public URL is gated (401 without credentials)"
+say "Smoke: public URL serves"
+# Ungated by JGP's ruling (2026-10-16), so there is nothing in front of it — this
+# asserts the SPA really serves, and that the bundle on disk is the one just
+# built rather than a stale one.
 code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "$PUBLIC_URL/")
-[ "$code" = "401" ] || die "expected 401 from ${PUBLIC_URL}/ without credentials, got ${code}"
-echo "  401 as expected"
-
-say "Smoke: serving with credentials"
-PW=$(cd ~/GitHub/ops && ./bin/all-creds contextbuilder web password 2>/dev/null) \
-  || die "could not read the basic-auth password from all-creds"
-curl -fsS -o /dev/null -w '  SPA    HTTP %{http_code}\n' --max-time 30 -u "contextbuilder:${PW}" "$PUBLIC_URL/"
+[ "$code" = "200" ] || die "expected 200 from ${PUBLIC_URL}/, got ${code}"
+curl -s --max-time 30 "$PUBLIC_URL/" | grep -q 'Context Builder' \
+  || die "the public page did not contain 'Context Builder' — wrong bundle served?"
+echo "  200, and the page carries the app title"
 # Deliberately no public actuator check: actuator is reachable on the loopback
 # port only (checked above) and is never proxied. /contextbuilder/actuator/health
 # falls through to the SPA and returns index.html, so probing it would prove
 # nothing.
 
-say "Done. Open ${PUBLIC_URL}/ (basic auth: contextbuilder / see all-creds)."
+say "Done. Open ${PUBLIC_URL}/"

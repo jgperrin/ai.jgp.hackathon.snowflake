@@ -13,7 +13,9 @@ import org.springframework.stereotype.Service;
 import ai.jgp.hackathon.snowflake.catalog.CatalogModel.TableInfo;
 import ai.jgp.hackathon.snowflake.catalog.CatalogService;
 import ai.jgp.hackathon.snowflake.catalog.Identifiers;
-import ai.jgp.hackathon.snowflake.config.CortexProperties;
+import ai.jgp.hackathon.snowflake.auth.UserContext;
+import ai.jgp.hackathon.snowflake.connection.ConnectionModel;
+import ai.jgp.hackathon.snowflake.connection.ConnectionRegistry;
 import ai.jgp.hackathon.snowflake.product.GenerateRequest.SchemaSelection;
 
 @Service
@@ -22,17 +24,15 @@ public class ProductService {
     private final CatalogService catalog;
     private final StandardsValidator validator;
     private final YamlWriter yaml;
-    private final ContractGenerator.Server server;
+    private final ConnectionRegistry connections;
     private final Clock clock = Clock.systemUTC();
 
     ProductService(CatalogService catalog, StandardsValidator validator, YamlWriter yaml,
-            CortexProperties properties) {
+            ConnectionRegistry connections) {
         this.catalog = catalog;
         this.validator = validator;
         this.yaml = yaml;
-        String account = properties.account() == null || properties.account().isBlank()
-                ? "local-stub" : properties.account();
-        this.server = new ContractGenerator.Server(account, properties.warehouse());
+        this.connections = connections;
     }
 
     public Bundle generate(GenerateRequest request) {
@@ -45,10 +45,17 @@ public class ProductService {
             if (tables.isEmpty()) {
                 throw new IllegalArgumentException("No tables selected in " + database + "." + schema);
             }
-            contracts.add(ContractGenerator.contract(database, schema, tables, server, now));
+            contracts.add(ContractGenerator.contract(database, schema, tables, server(), now));
         }
         Map<String, Object> product = ContractGenerator.product(database, contracts, now);
         return new Bundle(product, contracts, validator.validate(product, contracts));
+    }
+
+    /** The signed-in user's account goes into each contract's servers block. */
+    private ContractGenerator.Server server() {
+        ConnectionModel.Profile p = connections.profile(UserContext.current());
+        return p == null ? new ContractGenerator.Server("local-stub", null)
+                : new ContractGenerator.Server(p.account(), p.warehouse());
     }
 
     static List<TableInfo> select(List<TableInfo> available, List<String> wanted) {

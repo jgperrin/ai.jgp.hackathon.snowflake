@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import ai.jgp.hackathon.snowflake.auth.UserContext;
 import ai.jgp.hackathon.snowflake.cortex.CortexClient;
 import ai.jgp.hackathon.snowflake.product.Bundle;
 import ai.jgp.hackathon.snowflake.product.StandardsValidator;
@@ -64,7 +65,7 @@ public class EnrichService {
         List<String> warnings = new ArrayList<>();
         try (ExecutorService pool = Executors.newFixedThreadPool(PARALLEL_CALLS)) {
             List<CompletableFuture<AnswerParser.Result>> futures = jobs.stream()
-                    .map(job -> CompletableFuture.supplyAsync(() -> run(job, ids), pool)).toList();
+                    .map(job -> CompletableFuture.supplyAsync(UserContext.wrap(() -> run(job, ids)), pool)).toList();
             for (CompletableFuture<AnswerParser.Result> f : futures) {
                 AnswerParser.Result r = f.join();
                 proposals.addAll(r.proposals());
