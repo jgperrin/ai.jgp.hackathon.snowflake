@@ -84,7 +84,7 @@ export function Wizard() {
         ))}
       </nav>
 
-      <main>
+      <div className="wizard-body">
         <ErrorBanner error={error} onDismiss={() => setError('')} />
 
         {/* Steps stay mounted (hidden) so moving around the wizard keeps selections, proposals and results. */}
@@ -124,7 +124,7 @@ export function Wizard() {
             </button>
           </div>
         )}
-      </main>
+      </div>
     </>
   )
 }
