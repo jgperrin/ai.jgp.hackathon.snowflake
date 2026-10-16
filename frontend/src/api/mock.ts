@@ -3,8 +3,10 @@
  * Everything here is illustrative sample data (FINSERV_DW); nothing comes from
  * Snowflake. It mimics the backend contract closely enough to demo every step,
  * including sign-in (demo user jgp / odcs) and the per-user Snowflake connection:
- * data calls answer 401 when signed out and 409 NO_CONNECTION until a connection
- * is saved. Any account works; the password "wrong" fails the connection test.
+ * data calls answer 401 when signed out and 409 NO_CONNECTION without a saved
+ * connection. Like the backend with SNOWFLAKE_* set, the demo user starts with a
+ * seeded profile that opens on first use. Any account works; the password "wrong"
+ * fails the connection test.
  */
 import { ApiError, NO_CONNECTION } from './errors'
 import type {
@@ -12,6 +14,7 @@ import type {
   Bundle,
   Column,
   Connection,
+  ConnectionDefaults,
   ContractDoc,
   ContractProperty,
   Database,
@@ -316,7 +319,14 @@ function applyOne(contract: ContractDoc, p: Proposal) {
 
 const saved = new Map<string, { meta: SavedProduct; bundle: Bundle }>()
 
-type AuthKey = 'demoCredentials' | 'login' | 'logout' | 'me' | 'getConnection' | 'saveConnection'
+type AuthKey =
+  | 'demoCredentials'
+  | 'login'
+  | 'logout'
+  | 'me'
+  | 'getConnection'
+  | 'getConnectionDefaults'
+  | 'saveConnection'
 type DataApi = Omit<Api, AuthKey>
 
 const dataApi: DataApi = {
@@ -486,13 +496,19 @@ const dataApi: DataApi = {
 
 const DEMO = { username: 'jgp', password: 'odcs' }
 let session: string | null = null
+/** Illustrative stand-ins for the server's SNOWFLAKE_* settings (never a password). */
+const SERVER_DEFAULTS: ConnectionDefaults = {
+  account: 'demo-org-demo-account',
+  user: 'JUDGE',
+  warehouse: 'COMPUTE_WH',
+  database: 'CONTEXT_BUILDER',
+  role: 'SYSADMIN',
+}
+// Like the backend with SNOWFLAKE_* set: the demo user's profile is seeded, saved but not opened yet.
 let connection: Connection = {
-  account: null,
-  user: null,
-  warehouse: null,
-  database: null,
-  role: null,
-  passwordSet: false,
+  ...SERVER_DEFAULTS,
+  passwordSet: true,
+  state: 'SAVED',
   connected: false,
   error: null,
 }
@@ -507,9 +523,11 @@ function gated(api: DataApi): DataApi {
   for (const [name, fn] of Object.entries(api) as [string, (...args: unknown[]) => Promise<unknown>][]) {
     out[name] = async (...args: unknown[]) => {
       requireSession()
-      if (!connection.connected) {
+      if (connection.state === 'NONE') {
         throw new ApiError(409, 'No Snowflake connection yet: enter your account details to continue.', NO_CONNECTION)
       }
+      // A saved profile opens on first use, as the backend's pool does.
+      connection = { ...connection, state: 'CONNECTED', connected: true }
       return fn(...args)
     }
   }
@@ -542,6 +560,11 @@ export const mockApi: Api = {
     requireSession()
     return { ...connection }
   },
+  async getConnectionDefaults() {
+    await sleep(100)
+    requireSession()
+    return { ...SERVER_DEFAULTS }
+  },
   async saveConnection(update) {
     await sleep(900)
     requireSession()
@@ -562,6 +585,7 @@ export const mockApi: Api = {
       database: update.database || null,
       role: update.role || null,
       passwordSet: true,
+      state: 'CONNECTED',
       connected: true,
       error: null,
     }

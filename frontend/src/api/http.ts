@@ -149,6 +149,7 @@ export const httpApi: Api = {
   },
   me: () => orNull(401, request('GET', `${API}/auth/me`)),
   getConnection: () => request('GET', `${API}/me/connection`),
+  getConnectionDefaults: () => request('GET', `${API}/me/connection/defaults`),
   saveConnection: (update) => request('PUT', `${API}/me/connection`, update),
   listDatabases: () => request('GET', `${API}/catalog/databases`),
   listSchemas: (db) => request('GET', `${API}/catalog/databases/${enc(db)}/schemas`),

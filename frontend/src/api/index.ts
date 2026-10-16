@@ -66,6 +66,7 @@ export const api: Api = {
   logout: async () => (await impl()).logout(),
   me: async () => (await impl()).me(),
   getConnection: () => guarded(async () => (await impl()).getConnection()),
+  getConnectionDefaults: () => guarded(async () => (await impl()).getConnectionDefaults()),
   saveConnection: (update) => guarded(async () => (await impl()).saveConnection(update)),
   listDatabases: () => guarded(async () => (await impl()).listDatabases()),
   listSchemas: (db) => guarded(async () => (await impl()).listSchemas(db)),
