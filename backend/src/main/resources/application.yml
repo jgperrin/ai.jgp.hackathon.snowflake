@@ -38,3 +38,5 @@ management:
       # The app is built to start anyway and fail per request, so health must describe the
       # process and not Snowflake - otherwise a Snowflake blip looks like an app outage.
       enabled: false
+    # ODCS uses $defs entries the validator does not know as keywords; it warns once per entry at startup.
+    com.networknt.schema.keyword.UnknownKeywordFactory: ERROR
