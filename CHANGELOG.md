@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.7.0] - 2026-10-16
+
+### Added
+- `POST /api/quality/run`: executes every ODCS quality rule in the bundle against Snowflake and reports pass/fail, observed value, threshold and the exact SQL (DIND#5).
+- Library metrics `rowCount`, `nullValues`, `missingValues`, `duplicateValues`, `invalidValues` (valid values or regex) compile to SQL; `sql` rules run with `${table}` / `${column}` filled in, and must be a single read-only SELECT.
+- Every operator (`mustBe`, `mustNotBe`, `mustBe[Greater|Less]Than`, `...OrEqualTo`, `mustBe[Not]Between`); per-rule query timeout (`quality.timeout-seconds`, default 60); a failing rule never stops the run.
+
 ## [0.6.0] - 2026-10-16
 
 ### Added
