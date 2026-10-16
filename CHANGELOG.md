@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.20] - 2026-10-16
+
+### Changed
+- One brand mark everywhere (DIND#61): an original stellar-plate snow crystal
+  (six-fold, hexagonal plate, a spoke and a node per vertex) replaces the
+  stacked-layers glyph in the header, the connect callout and the sign-in page,
+  and the favicon now draws the same geometry in palette indigo (indigo-300 in a
+  dark tab bar). The old favicon's off-palette purple, gradients and 17 blur
+  filters are gone. Comparison: `art/brand-mark-61.png`.
+
 ## [0.10.19] - 2026-10-16
 
 ### Fixed

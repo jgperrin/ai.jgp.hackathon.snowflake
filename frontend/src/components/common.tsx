@@ -56,13 +56,25 @@ export function LoadingState({ caption }: { caption?: string }) {
   )
 }
 
-/** Context Builder's brand mark: stacked layers (schema → contract → product). */
+/**
+ * Context Builder's brand mark: a stellar-plate snow crystal. Six-fold symmetry, a hexagonal
+ * plate with a spoke and a node at each vertex (tables joined into a product). Original
+ * geometry, drawn for this app; public/favicon.svg repeats it, so change both together.
+ */
 export function BrandMark() {
   return (
     <svg className="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 2 2 7l10 5 10-5-10-5z" />
-      <path d="m2 12 10 5 10-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-      <path d="m2 17 10 5 10-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
+        <path d="M12 6l5.2 3v6L12 18l-5.2-3V9z" />
+        <path d="M12 6V3.4M17.2 9l2.25-1.3M17.2 15l2.25 1.3M12 18v2.6M6.8 15l-2.25 1.3M6.8 9 4.55 7.7" />
+      </g>
+      <circle cx="12" cy="12" r="2" />
+      <circle cx="12" cy="2.6" r="1.6" />
+      <circle cx="20.14" cy="7.3" r="1.6" />
+      <circle cx="20.14" cy="16.7" r="1.6" />
+      <circle cx="12" cy="21.4" r="1.6" />
+      <circle cx="3.86" cy="16.7" r="1.6" />
+      <circle cx="3.86" cy="7.3" r="1.6" />
     </svg>
   )
 }
