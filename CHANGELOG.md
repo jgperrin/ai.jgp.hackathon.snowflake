@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.0] - 2026-10-16
+
+### Added
+- `POST /api/products/save`: stores the ODPS product, every ODCS contract and the derived OSI/Apache Ossie model in Snowflake, one row each (YAML text + `VARIANT` document), under a new save id (DIND#6).
+- `GET /api/products` (latest save per product) and `GET /api/products/{id}` (reload a save as a validated bundle).
+- Table `<db>.DATA_PRODUCTS.ARTIFACTS` created on first use with idempotent DDL; append-only (no UPDATE/DELETE/DROP anywhere), so every save is kept as history. Target database: `STORAGE_DATABASE`, else `SNOWFLAKE_DATABASE`.
+
 ## [0.9.0] - 2026-10-16
 
 ### Added
