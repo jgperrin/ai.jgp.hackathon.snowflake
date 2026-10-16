@@ -6,6 +6,19 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Context Builder</title>
+    <script>
+      // Appearance before first paint (DIND#59), so nobody sees a frame in the wrong theme. Mirrors
+      // applyAppearance in src/lib/appearance.ts; 'cb-appearance' is APPEARANCE_KEY there.
+      try {
+        var mode = localStorage.getItem('cb-appearance')
+        if (mode === 'light' || mode === 'dark') {
+          document.documentElement.dataset.theme = mode
+          document.documentElement.style.colorScheme = mode
+        }
+      } catch (e) {
+        // Storage blocked: stay on System, which the CSS media query handles.
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
