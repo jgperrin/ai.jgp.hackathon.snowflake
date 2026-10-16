@@ -8,7 +8,7 @@ Everybody wants to build a context layer for AI, but what does it look like, and
 
 1. **Generates** one [ODCS v3.2](https://github.com/bitol-io/open-data-contract-standard) data contract per schema and bundles them as the output ports of an [ODPS v1.1](https://github.com/bitol-io/open-data-product-standard) data product.
 2. **Profiles** the data with bounded SQL (sampled, one aggregate pass per table).
-3. **Asks Snowflake Cortex** (`AI_COMPLETE`) to propose the semantic layer: descriptions, business names, PII classification, tags, data quality rules and SLAs. Primary keys are proposed from profile evidence.
+3. **Asks Snowflake Cortex** (`AI_COMPLETE`) to propose the semantic layer: descriptions, business names, PII classification, tags, data-quality rules and SLAs (collectively named [Data QoS](https://medium.com/data-mesh-learning/what-is-data-qos-and-why-is-it-critical-c524b81e3cc1)). Primary keys are proposed from profile evidence.
 4. **Keeps a human in the loop**: nothing reaches a contract until you accept (or edit) it.
 5. **Proves the rules**: every quality rule runs against Snowflake and shows pass/fail with the exact SQL.
 6. **Publishes**: saves the product, its contracts and the semantic model in Snowflake, and exports to **OSI/Apache Ossie** for BI and AI tools.
