@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.11] - 2026-10-16
+
+### Changed
+- README rewritten for Context Builder: pitch, try-it (jgp / odcs), live results on the lab data, mapping, architecture, run, API (DIND#41).
+
+### Added
+- `doc/DEMO.md`: 3-minute demo script with timings.
+
 ## [0.10.10] - 2026-10-16
 
 ### Changed
