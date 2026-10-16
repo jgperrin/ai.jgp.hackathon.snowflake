@@ -49,7 +49,7 @@ export function SignIn({ onSignedIn }: Props) {
           <span className="brand-name">Context Builder</span>
         </div>
         <h1 className="signin-title">Sign in</h1>
-        <p className="muted signin-sub">From Snowflake schema to data product.</p>
+        <p className="muted signin-sub">From Snowflake schema to AI-ready data product.</p>
 
         {demo && (
           <p className="banner banner-ok signin-demo">
