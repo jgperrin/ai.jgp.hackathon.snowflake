@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import tools.jackson.core.JacksonException;
+import tools.jackson.core.json.JsonReadFeature;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -21,7 +22,11 @@ final class AnswerParser {
     static final Set<String> SLA_PROPERTIES = Set.of("freshness", "latency", "retention", "frequency",
             "availability", "throughput", "errorRate", "generalAvailability", "endOfSupport", "endOfLife",
             "timeOfAvailability");
-    private static final JsonMapper JSON = JsonMapper.builder().build();
+    /** Models drift from strict JSON in small ways; accept those rather than lose a table. */
+    private static final JsonMapper JSON = JsonMapper.builder()
+            .enable(JsonReadFeature.ALLOW_TRAILING_COMMA, JsonReadFeature.ALLOW_JAVA_COMMENTS,
+                    JsonReadFeature.ALLOW_SINGLE_QUOTES, JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS)
+            .build();
 
     record Result(List<Proposal> proposals, List<String> warnings) {
     }

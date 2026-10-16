@@ -77,13 +77,23 @@ public class EnrichService {
     private AnswerParser.Result run(Job job, AtomicInteger ids) {
         Set<String> columns = job.table().columns().stream().map(ColumnProfile::column).collect(Collectors.toSet());
         try {
-            String answer = cortex.complete(PromptBuilder.build(job.database(), job.schema(), job.table()));
+            String prompt = PromptBuilder.build(job.database(), job.schema(), job.table());
+            String answer = cortex.complete(prompt);
+            if (AnswerParser.json(answer) == null) {
+                log.warn("Unparseable Cortex answer for {} ({} chars, ends with: {}); retrying once",
+                        job.table().table(), answer == null ? 0 : answer.length(), tail(answer));
+                answer = cortex.complete(prompt);
+            }
             return AnswerParser.parse(job.contractId(), job.table().table(), columns, answer, ids);
         } catch (RuntimeException e) {
             log.warn("Cortex failed for {}", job.table().table(), e);
             return new AnswerParser.Result(List.of(),
                     List.of(job.table().table() + ": Cortex call failed: " + e.getMessage()));
         }
+    }
+
+    private static String tail(String s) {
+        return s == null ? "null" : s.substring(Math.max(0, s.length() - 200));
     }
 
     public Bundle apply(Bundle bundle, List<Proposal> accepted) {

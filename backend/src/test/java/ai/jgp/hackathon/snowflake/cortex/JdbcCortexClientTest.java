@@ -19,4 +19,13 @@ class JdbcCortexClientTest {
         assertThat(JdbcCortexClient.unquote("\"broken")).isEqualTo("\"broken");
         assertThat(JdbcCortexClient.unquote("\"not \"valid\" json\"")).isEqualTo("\"not \"valid\" json\"");
     }
+
+    @Test
+    void unwrapsChoicesEnvelope() {
+        assertThat(JdbcCortexClient.text("{\"choices\": [{\"messages\": \"{\\\"a\\\": 1}\"}], \"usage\": {}}"))
+                .isEqualTo("{\"a\": 1}");
+        assertThat(JdbcCortexClient.text("{\"choices\": [{\"message\": {\"content\": \"hi\"}}]}")).isEqualTo("hi");
+        assertThat(JdbcCortexClient.text("{\"table\": {}}")).isEqualTo("{\"table\": {}}");
+        assertThat(JdbcCortexClient.text("{\"choices\": broken")).isEqualTo("{\"choices\": broken");
+    }
 }
