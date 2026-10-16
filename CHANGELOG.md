@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.36] - 2026-10-16
+
+### Added
+- `doc/SUBMISSION.md`, the Devpost story for the Data in the D hackathon, linked
+  from the README (DIND#99). It had been committed on a local checkout only, at
+  15:04; this lands it on `main`.
+
+### Note
+- No artifact change: documentation only.
+
 ## [0.10.35] - 2026-10-16
 
 ### Changed
