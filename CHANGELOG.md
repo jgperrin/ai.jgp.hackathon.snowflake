@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.4.0] - 2026-10-16
+
+### Added
+- `POST /api/profile`: per-column null count and ratio, approximate distinct count, min/max, max text length, top 5 values for low-cardinality columns and 5 sample values (DIND#2).
+- Bounded by construction: one aggregate pass per table; tables over `profile.sample-rows` (default 100,000) read via `SAMPLE (n ROWS)`, views via `LIMIT`; every result says whether it was `sampled`.
+
 ## [0.3.0] - 2026-10-16
 
 ### Added
