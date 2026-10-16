@@ -145,9 +145,7 @@ public class SelfReportService {
         sb.append("---\n\n### Session context\n\n");
         sb.append("Report ID: `").append(reportId).append("`\n\n");
         sb.append("Signed-in user: `").append(input.user() == null ? "unknown" : input.user()).append("`\n\n");
-        if (input.callerIp() != null) {
-            sb.append("Caller IP: `").append(input.callerIp()).append("`\n\n");
-        }
+        // No caller IP here: the repo is public. It stays in the rate limiter and the ERROR log.
         sb.append("```json\n").append(context).append("\n```\n");
         return sb.toString();
     }

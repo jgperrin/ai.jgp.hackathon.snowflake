@@ -88,6 +88,13 @@ class SelfReportServiceTest {
     }
 
     @Test
+    void theCallerIpStaysOutOfThePublicIssue() {
+        // The repo is public: the IP feeds the rate limit and the ERROR log, never the issue.
+        service.submit(input("IP check", LEAKY_CONTEXT, List.of()));
+        assertThat(stub.all()).doesNotContain("203.0.113.7");
+    }
+
+    @Test
     void aGitHubRejectionIsLoggedAtErrorWithoutCredentials(CapturedOutput output) {
         stub.issueStatus = 422;
         assertThatThrownBy(() -> service.submit(input("Recover me please", LEAKY_CONTEXT, List.of())))

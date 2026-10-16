@@ -91,7 +91,7 @@ class SelfReportControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.issueUrl").value(StubGitHub.ISSUE_URL))
                 .andExpect(jsonPath("$.reportId").isNotEmpty());
-        assertThat(stub.all()).contains("Signed-in user: `jgp`").contains("198.51.100.3");
+        assertThat(stub.all()).contains("Signed-in user: `jgp`").doesNotContain("198.51.100.3");
     }
 
     @Test
