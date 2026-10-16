@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import ai.jgp.hackathon.snowflake.product.Bundle;
+import ai.jgp.hackathon.snowflake.store.StoreModel.Artifact;
 import ai.jgp.hackathon.snowflake.store.StoreModel.SaveResult;
+import ai.jgp.hackathon.snowflake.store.StoreModel.SavedSave;
 import ai.jgp.hackathon.snowflake.store.StoreModel.SavedProduct;
 
 @RestController
@@ -33,11 +35,27 @@ class StoreController {
         return store.latest();
     }
 
+    /** Every save in the table, all kinds; the extra segment keeps it clear of the {id} route. */
+    @GetMapping("/saves")
+    List<SavedSave> saves() {
+        return store.saves();
+    }
+
     @GetMapping("/{id}")
     Bundle load(@PathVariable String id) {
+        return store.load(saveId(id));
+    }
+
+    /** One save's artifacts as stored, YAML included. */
+    @GetMapping("/{id}/artifacts")
+    List<Artifact> artifacts(@PathVariable String id) {
+        return store.artifacts(saveId(id));
+    }
+
+    private static String saveId(String id) {
         if (!id.matches("[0-9a-fA-F-]{36}")) {
             throw new IllegalArgumentException("Invalid save id");
         }
-        return store.load(id);
+        return id;
     }
 }

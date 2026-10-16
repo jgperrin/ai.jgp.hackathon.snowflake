@@ -1,6 +1,8 @@
 package ai.jgp.hackathon.snowflake.store;
 
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -12,7 +14,10 @@ import ai.jgp.hackathon.snowflake.product.Bundle;
 import ai.jgp.hackathon.snowflake.product.StandardsValidator;
 import ai.jgp.hackathon.snowflake.product.YamlWriter;
 import ai.jgp.hackathon.snowflake.store.StoreModel.Artifact;
+import ai.jgp.hackathon.snowflake.store.StoreModel.ArtifactSummary;
 import ai.jgp.hackathon.snowflake.store.StoreModel.SaveResult;
+import ai.jgp.hackathon.snowflake.store.StoreModel.SavedSave;
+import ai.jgp.hackathon.snowflake.store.StoreModel.StoredRow;
 import ai.jgp.hackathon.snowflake.store.StoreModel.SavedProduct;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
@@ -56,6 +61,49 @@ public class StoreService {
 
     public List<SavedProduct> latest() {
         return store.latest();
+    }
+
+    public List<SavedSave> saves() {
+        return group(store.saves());
+    }
+
+    /** The artifacts of one save exactly as stored, YAML included; unknown saves are a bad request. */
+    public List<Artifact> artifacts(String saveId) {
+        List<Artifact> artifacts = store.load(saveId);
+        if (artifacts.isEmpty()) {
+            throw new IllegalArgumentException("No saved product " + saveId);
+        }
+        return artifacts;
+    }
+
+    private static int kindRank(String kind) {
+        return switch (kind == null ? "" : kind) {
+            case "ODPS" -> 0;
+            case "ODCS" -> 1;
+            case "OSI" -> 2;
+            default -> 3;
+        };
+    }
+
+    /**
+     * The store returns one row per artifact; this folds them into saves, newest first, each listing its
+     * product, then its contracts by name, then the OSI model. A save's name and version are its product's.
+     */
+    static List<SavedSave> group(List<StoredRow> rows) {
+        Map<String, List<StoredRow>> bySave = new LinkedHashMap<>();
+        rows.forEach(r -> bySave.computeIfAbsent(r.saveId(), k -> new ArrayList<>()).add(r));
+        return bySave.values().stream().map(saveRows -> {
+            StoredRow first = saveRows.get(0);
+            List<ArtifactSummary> artifacts = saveRows.stream().map(StoredRow::artifact)
+                    .sorted(Comparator.comparingInt((ArtifactSummary a) -> kindRank(a.kind()))
+                            .thenComparing(ArtifactSummary::name, Comparator.nullsLast(Comparator.naturalOrder())))
+                    .toList();
+            ArtifactSummary product = artifacts.stream().filter(a -> "ODPS".equals(a.kind())).findFirst()
+                    .orElse(null);
+            return new SavedSave(first.saveId(), first.productId(), product == null ? null : product.name(),
+                    product == null ? null : product.version(), first.savedAt(), first.savedBy(), artifacts);
+        }).sorted(Comparator.comparing(SavedSave::savedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .toList();
     }
 
     public Bundle load(String saveId) {
