@@ -116,7 +116,7 @@ export function ConnectionPanel({ reason, onClose, onSaved }: Props) {
           </button>
         </div>
 
-        {reason && (
+        {reason && !connected && (
           <div className="banner banner-warn">
             <span className="banner-text">
               Context Builder reads your databases with your own Snowflake account. Enter and test your connection to
