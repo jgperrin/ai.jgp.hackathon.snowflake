@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.4] - 2026-10-16
+
+### Changed
+- The app is now called **Context Builder** (tab title and header) (DIND#25).
+
+### Added
+- Project art under `art/`; README opens with the Context Builder banner.
+
 ## [0.10.3] - 2026-10-16
 
 ### Fixed
