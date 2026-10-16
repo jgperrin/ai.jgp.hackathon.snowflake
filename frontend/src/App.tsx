@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ApiError, MOCK, api, onSessionEvent } from './api'
 import type { SessionUser } from './api'
+import { AppearanceToggle } from './components/AppearanceToggle'
 import { ConnectionPanel } from './components/ConnectionPanel'
 import { Footer } from './components/Footer'
 import { SignIn } from './components/SignIn'
@@ -132,6 +133,7 @@ export default function App() {
             <span className="account-user">
               Signed in as <strong>{user.username}</strong>
             </span>
+            <AppearanceToggle />
             <button type="button" className="btn-secondary" onClick={() => setPanel('')}>
               <span className={connected ? 'badge badge-ok' : 'badge badge-gray'}>
                 {connected ? '● connected' : '○ not connected'}
