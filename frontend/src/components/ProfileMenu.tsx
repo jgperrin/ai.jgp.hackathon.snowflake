@@ -17,6 +17,7 @@ interface Props {
   status: ConnectionStatus
   /** Opens the existing Snowflake connection panel. */
   onOpenConnection: () => void
+  onAbout: () => void
   onSignOut: () => void
 }
 
@@ -33,7 +34,7 @@ function initials(name: string): string {
  * connection (which opens the existing panel) and Sign out. WAI-ARIA menu button pattern: arrows move,
  * Home/End jump, Escape or Tab closes, Escape returns focus to the trigger, a click outside closes.
  */
-export function ProfileMenu({ username, status, onOpenConnection, onSignOut }: Props) {
+export function ProfileMenu({ username, status, onOpenConnection, onAbout, onSignOut }: Props) {
   const [open, setOpen] = useState(false)
   // Which item takes focus when the menu opens: the first, or the last when opened with ArrowUp.
   const [initialFocus, setInitialFocus] = useState<'first' | 'last'>('first')
@@ -160,6 +161,11 @@ export function ProfileMenu({ username, status, onOpenConnection, onSignOut }: P
             <button type="button" role="menuitem" tabIndex={-1} className="profile-item" onClick={() => choose(onOpenConnection)}>
               <span>Snowflake connection</span>
               <span className={status === 'connected' ? 'badge badge-ok' : 'badge pill-warn'}>{statusLabel}</span>
+            </button>
+          </li>
+          <li role="none">
+            <button type="button" role="menuitem" tabIndex={-1} className="profile-item" onClick={() => choose(onAbout)}>
+              About
             </button>
           </li>
           <li role="separator" className="profile-separator" />
