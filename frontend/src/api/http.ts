@@ -1,4 +1,4 @@
-import type { Api } from './types'
+import type { Api, Bundle } from './types'
 
 /** Raised for any non-2xx answer; the message is what the backend said, when it said something. */
 export class ApiError extends Error {
@@ -51,21 +51,26 @@ async function errorMessage(response: Response, method: string, path: string): P
 
 const enc = encodeURIComponent
 
+/*
+ * The agreed contract wraps a lone bundle as {bundle}; the backend as built
+ * (yaml, enrich, quality/run) reads the Bundle itself at the top level. Send
+ * both shapes at once: Jackson ignores the unknown key either way, so these
+ * calls work whichever way each endpoint lands.
+ */
+const bundleBody = (bundle: Bundle) => ({ ...bundle, bundle })
+
 export const httpApi: Api = {
   listDatabases: () => request('GET', '/api/catalog/databases'),
   listSchemas: (db) => request('GET', `/api/catalog/databases/${enc(db)}/schemas`),
   listTables: (db, schema) =>
     request('GET', `/api/catalog/databases/${enc(db)}/schemas/${enc(schema)}/tables`),
   generate: (req) => request('POST', '/api/products/generate', req),
-  // The agreed contract wraps the bundle as {bundle}; the first backend cut (DIND#3)
-  // reads the Bundle itself at the top level. Send both shapes: Jackson ignores the
-  // unknown key either way, so this works before and after the backend aligns.
-  toYaml: (bundle) => request('POST', '/api/products/yaml', { ...bundle, bundle }),
-  enrich: (bundle) => request('POST', '/api/enrich', { bundle }),
+  toYaml: (bundle) => request('POST', '/api/products/yaml', bundleBody(bundle)),
+  enrich: (bundle) => request('POST', '/api/enrich', bundleBody(bundle)),
   apply: (bundle, accepted) => request('POST', '/api/products/apply', { bundle, accepted }),
-  runQuality: (bundle) => request('POST', '/api/quality/run', { bundle }),
-  save: (bundle) => request('POST', '/api/products/save', { bundle }),
+  runQuality: (bundle) => request('POST', '/api/quality/run', bundleBody(bundle)),
+  save: (bundle) => request('POST', '/api/products/save', bundleBody(bundle)),
   listProducts: () => request('GET', '/api/products'),
   getProduct: (id) => request('GET', `/api/products/${enc(id)}`),
-  exportOsi: (bundle) => request('POST', '/api/export/osi', { bundle }),
+  exportOsi: (bundle) => request('POST', '/api/export/osi', bundleBody(bundle)),
 }

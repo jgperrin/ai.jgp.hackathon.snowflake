@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.8.0] - 2026-10-16
+
+### Added
+- Frontend wizard steps 3–5 (DIND#9):
+  - **Analyze**: "Analyze with Cortex" (`POST /api/enrich`) with elapsed-time progress; proposals as cards grouped by contract and table, with kind badge, target column and rationale; Accept / Edit / Reject per card, "Accept all for this table" / "Reject all", Undo. Only explicitly accepted proposals (with any edited value) are sent to `POST /api/products/apply`; the YAML is refreshed afterwards.
+  - **Verify**: "Run quality rules" (`POST /api/quality/run`) with passed / failed / pass-rate scoreboard and a per-rule table (contract, table, column, rule, observed, threshold, SQL, error); "only failures" filter.
+  - **Publish**: "Save to Snowflake" (`POST /api/products/save`), "Export OSI/Apache Ossie" (`POST /api/export/osi`) viewable with validity status, Copy and Download, and the list of saved products (`GET /api/products`) with Open (`GET /api/products/{id}`).
+- Next-step button under each step; steps keep their state while moving around the wizard.
+
+### Changed
+- `src/api/` sends single-bundle request bodies as both the bundle itself and `{bundle}`, so they match the backend as built and the agreed contract.
+
 ## [0.7.0] - 2026-10-16
 
 ### Added
