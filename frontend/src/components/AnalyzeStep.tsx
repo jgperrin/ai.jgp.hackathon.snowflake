@@ -115,8 +115,15 @@ export function AnalyzeStep({ bundle, onApplied, onViewDocuments }: Props) {
           <h2>Analyze with Cortex</h2>
           <p className="muted">
             Snowflake Cortex reads each of the {tableCount} table{tableCount === 1 ? '' : 's'} and proposes descriptions,
-            business names, classifications, tags, data-quality rules and SLAs. Nothing reaches a contract until you
-            accept it.
+            business names, classifications, tags, data-quality rules and SLAs (collectively named{' '}
+            <a
+              href="https://medium.com/data-mesh-learning/what-is-data-qos-and-why-is-it-critical-c524b81e3cc1"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Data QoS
+            </a>
+            ). Nothing reaches a contract until you accept it.
           </p>
         </div>
         <button type="button" className="btn-primary btn-large" disabled={startedAt !== null} onClick={() => void analyze()}>
