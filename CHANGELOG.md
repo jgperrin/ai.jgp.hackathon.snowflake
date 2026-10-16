@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.2] - 2026-10-16
+
+### Fixed
+- Cortex answers were truncated mid-JSON by the default output limit, losing whole tables: `AI_COMPLETE` now runs with `max_tokens` 8192 and temperature 0, and the prompt asks for shorter text (DIND#21).
+- Lenient JSON parsing (trailing commas, comments, single quotes); one retry on an unparseable answer, with its length and tail logged.
+- Both `AI_COMPLETE` return shapes are handled (plain text or a `choices` envelope).
+- Validator "Unknown keyword" startup warnings muted.
+
 ## [0.10.1] - 2026-10-16
 
 ### Fixed
