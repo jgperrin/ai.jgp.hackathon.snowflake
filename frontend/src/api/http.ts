@@ -1,5 +1,5 @@
 import { ApiError } from './errors'
-import type { Api, Bundle } from './types'
+import type { Api, Bundle, EnrichResponse } from './types'
 
 export { ApiError } from './errors'
 
@@ -56,6 +56,10 @@ async function errorBody(
     return { message: fallback, code: null }
   }
   if (!text) {
+    // A bare 502/503/504 comes from a proxy in front of the backend, not from the backend itself.
+    if (response.status >= 502 && response.status <= 504) {
+      return { message: 'The server is unreachable or restarting. Try again in a moment.', code: null }
+    }
     return { message: fallback, code: null }
   }
   try {
@@ -67,6 +71,45 @@ async function errorBody(
 }
 
 const enc = encodeURIComponent
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+type EnrichJob = {
+  id: string
+  status: 'RUNNING' | 'DONE' | 'FAILED'
+  elapsedSeconds: number
+  result: EnrichResponse | null
+  error: string | null
+}
+
+const POLL_MS = 2000
+const MAX_POLL_FAILURES = 5
+
+/**
+ * A Cortex analysis takes 30 to 90 s. Held as one request, any proxy with a shorter read timeout
+ * cuts it with a bare 502, so the analysis runs as a server-side job and is polled instead. One
+ * failed poll (a network blip, a proxy hiccup) is retried rather than ending the analysis.
+ */
+async function enrichViaJob(bundle: Bundle): Promise<EnrichResponse> {
+  let job = await request<EnrichJob>('POST', `${API}/enrich/jobs`, bundleBody(bundle))
+  let failures = 0
+  while (job.status === 'RUNNING') {
+    await sleep(POLL_MS)
+    try {
+      job = await request<EnrichJob>('GET', `${API}/enrich/jobs/${enc(job.id)}`)
+      failures = 0
+    } catch (cause) {
+      const transient = cause instanceof ApiError && (cause.status === 0 || cause.status >= 502)
+      if (!transient || ++failures >= MAX_POLL_FAILURES) {
+        throw cause
+      }
+    }
+  }
+  if (job.status === 'FAILED' || !job.result) {
+    throw new ApiError(500, job.error || 'The Cortex analysis failed.')
+  }
+  return job.result
+}
 
 /*
  * The agreed contract wraps a lone bundle as {bundle}; the backend as built
@@ -99,7 +142,7 @@ export const httpApi: Api = {
     request('GET', `${API}/catalog/databases/${enc(db)}/schemas/${enc(schema)}/tables`),
   generate: (req) => request('POST', `${API}/products/generate`, req),
   toYaml: (bundle) => request('POST', `${API}/products/yaml`, bundleBody(bundle)),
-  enrich: (bundle) => request('POST', `${API}/enrich`, bundleBody(bundle)),
+  enrich: (bundle) => enrichViaJob(bundle),
   apply: (bundle, accepted) => request('POST', `${API}/products/apply`, { bundle, accepted }),
   runQuality: (bundle) => request('POST', `${API}/quality/run`, bundleBody(bundle)),
   save: (bundle) => request('POST', `${API}/products/save`, bundleBody(bundle)),
