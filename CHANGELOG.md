@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.15] - 2026-10-16
+
+### Fixed
+- Analyze starts a background job and polls it every 2 s instead of holding one long request, so a proxy timeout can no longer end it with "502 Bad Gateway"; up to 5 failed polls in a row are retried (DIND#47).
+- A bare 502/503/504 from a proxy now reads "The server is unreachable or restarting. Try again in a moment."
+
 ## [0.10.14] - 2026-10-16
 
 ### Fixed
