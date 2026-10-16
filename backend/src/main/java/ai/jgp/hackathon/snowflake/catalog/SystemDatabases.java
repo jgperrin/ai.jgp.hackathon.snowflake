@@ -5,8 +5,9 @@ import java.util.Locale;
 
 /**
  * The one place that decides whether a database is Snowflake's own rather than the account's.
- * SHOW DATABASES exposes no system/kind column, so the rule is name-based. Changing it is a
- * one-line edit to {@link #PATTERNS}.
+ * The rule is name-based on the SHOW DATABASES {@code name} column (its {@code kind}/{@code origin}
+ * columns were not checked against the live account). Changing it is a one-line edit to
+ * {@link #PATTERNS}.
  */
 public final class SystemDatabases {
 
