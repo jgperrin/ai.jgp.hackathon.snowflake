@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.17] - 2026-10-16
+
+### Added
+- `deploy.sh` prunes old jars after a successful deploy, keeping the two newest
+  (DIND#53). Nothing removed them before, so a dozen deploys had left 10 jars and
+  1.2 GB on the api VM; the store is now 357 MB. Deliberately runs last, so a
+  failed deploy cannot delete the jar it would roll back to.
+
+### Note
+- No artifact change: ops files only.
+
 ## [0.10.16] - 2026-10-16
 
 ### Changed

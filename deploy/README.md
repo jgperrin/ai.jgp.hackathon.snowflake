@@ -127,6 +127,12 @@ done
 Backend only. The static bundle is not versioned on the host — to revert the
 frontend too, check out the older tag and run `deploy.sh`.
 
+**Only the last two jars are kept.** `deploy.sh` prunes after a successful
+deploy, leaving the current release plus one previous so `rollback.sh` always has
+a target. So rollback reaches back exactly one release; anything older needs a
+rebuild from its tag. Jars are ~119 MB each and nothing else removes them — a
+dozen deploys had reached 1.2 GB before the prune existed.
+
 For the vhost, timestamped backups sit beside it:
 
 ```
