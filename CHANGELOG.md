@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.14] - 2026-10-16
+
+### Fixed
+- Analyze no longer depends on one long HTTP request: `POST /api/enrich/jobs` starts the Cortex analysis in the background (as the signed-in user) and `GET /api/enrich/jobs/{id}` reports RUNNING / DONE / FAILED with the result. Behind a proxy with a short read timeout the old single request ended in a bare 502 (DIND#46).
+- A body that is not a bundle now answers 400 instead of 500 on enrich, quality run and OSI export.
+
 ## [0.10.13] - 2026-10-16
 
 ### Changed
