@@ -34,6 +34,7 @@ public class QualityService {
     }
 
     public RunResult run(Bundle bundle) {
+        ai.jgp.hackathon.snowflake.enrich.EnrichService.requireContracts(bundle);
         List<Check> checks = new ArrayList<>();
         for (Map<String, Object> contract : bundle.contracts()) {
             Map<?, ?> server = ((List<?>) contract.get("servers")).stream().map(s -> (Map<?, ?>) s).findFirst()

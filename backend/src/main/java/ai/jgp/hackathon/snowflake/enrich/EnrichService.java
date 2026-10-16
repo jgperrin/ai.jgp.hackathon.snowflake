@@ -49,6 +49,7 @@ public class EnrichService {
     }
 
     public EnrichResult enrich(Bundle bundle) {
+        requireContracts(bundle);
         List<Job> jobs = new ArrayList<>();
         AtomicInteger ids = new AtomicInteger();
         List<Proposal> keys = new ArrayList<>();
@@ -105,6 +106,13 @@ public class EnrichService {
     public Bundle apply(Bundle bundle, List<Proposal> accepted) {
         List<Map<String, Object>> contracts = ProposalApplier.apply(bundle.contracts(), accepted);
         return new Bundle(bundle.product(), contracts, validator.validate(bundle.product(), contracts));
+    }
+
+    /** A body that is not a bundle is the caller's mistake (400), not ours (500). */
+    public static void requireContracts(Bundle bundle) {
+        if (bundle == null || bundle.contracts() == null || bundle.contracts().isEmpty()) {
+            throw new IllegalArgumentException("Expected a bundle with at least one contract");
+        }
     }
 
     static Map<?, ?> server(Map<String, Object> contract) {
