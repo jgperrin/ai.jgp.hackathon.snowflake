@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.5] - 2026-10-16
+
+### Added
+- `deploy/` — the runbook and artifacts for getting this tool onto
+  tools.actianlabs.com/contextbuilder: the live nginx vhost, the systemd unit, an
+  env template, and `deploy.sh` / `rollback.sh`. Replaces an earlier attempt that
+  documented the wrong host (DIND#29).
+
+### Note
+- No artifact change: this release ships documentation and ops files only. The jar
+  and the bundle are functionally identical to 0.10.4.
+
 ## [0.10.4] - 2026-10-16
 
 ### Changed

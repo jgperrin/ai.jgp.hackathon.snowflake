@@ -1,0 +1,35 @@
+# systemd unit for Context Builder on the api VM.
+# Mirrors the convention used by schema-drift-advisor / dpcompare / next /
+# jyo / bitol on this host.
+#
+# The SPA is static (nginx serves it from
+# /var/www/tools.actianlabs.com/contextbuilder); this unit runs only the
+# Spring Boot API, reached via nginx as
+# https://tools.actianlabs.com/contextbuilder/api/*.
+#
+# Port 8093: 8080 is Bitol svc, 8083 bitol-mcp, 8086/8087 next, 8088
+# controlcenter, 8089 the Schema Drift Advisor, 8090 Data Product Compare,
+# 8091/8092 the CRM. Enumerated in infra/api-vm/README.md — check that table
+# before moving this.
+#
+# /opt/contextbuilder/.env holds the runtime config, including the Snowflake
+# credentials the app needs to reach Cortex.
+
+[Unit]
+Description=Context Builder (tools.actianlabs.com/contextbuilder)
+After=network.target
+
+[Service]
+Type=simple
+User=jgp
+WorkingDirectory=/opt/contextbuilder
+EnvironmentFile=-/opt/contextbuilder/.env
+ExecStart=/usr/bin/java -jar /opt/contextbuilder/contextbuilder.jar
+Restart=on-failure
+RestartSec=10
+# Spring Boot exits 143 on SIGTERM; without this every deploy restart and
+# every `systemctl stop` is recorded as a failure.
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
