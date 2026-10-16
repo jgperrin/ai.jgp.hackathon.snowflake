@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.28] - 2026-10-16
+
+### Fixed
+- Under `npm run dev:mock` the Help panel answers locally with a fake
+  `mock.invalid` issue URL instead of proxying `POST /api/self-report` to
+  whatever backend is on :8080, which showed a false "Signed out" (DIND#74).
+  The branch is dropped from production builds.
+
 ## [0.10.27] - 2026-10-16
 
 ### Changed
