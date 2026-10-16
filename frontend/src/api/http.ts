@@ -1,3 +1,4 @@
+import { recordError } from '../lib/recentErrors'
 import { ApiError } from './errors'
 import type { Api, Bundle, EnrichResponse } from './types'
 
@@ -16,7 +17,9 @@ async function send(method: Method, path: string, body?: unknown): Promise<Respo
       body: body === undefined ? undefined : JSON.stringify(body),
     })
   } catch (cause) {
-    throw new ApiError(0, `Backend unreachable (${method} ${path}): ${String(cause)}`)
+    const message = `Backend unreachable (${method} ${path}): ${String(cause)}`
+    recordError(0, `${method} ${path}`, message)
+    throw new ApiError(0, message)
   }
 
   if (!response.ok) {
@@ -44,6 +47,17 @@ async function orNull<T>(status: number, call: Promise<T>): Promise<T | null> {
 
 /** Backend errors come as {message, code?} or as a Spring ProblemDetail {detail}; fall back to the status line. */
 async function errorBody(
+  response: Response,
+  method: string,
+  path: string,
+): Promise<{ message: string; code: string | null }> {
+  const body = await parseErrorBody(response, method, path)
+  // Kept for the Help panel's report (status, call and message only).
+  recordError(response.status, `${method} ${path}`, body.message)
+  return body
+}
+
+async function parseErrorBody(
   response: Response,
   method: string,
   path: string,

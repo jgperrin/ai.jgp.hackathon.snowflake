@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.23] - 2026-10-16
+
+### Added
+- In-app Help (DIND#60): a `?` button in the top bar opens a "Report a problem"
+  panel (description, up to 5 attachments, paste a screenshot) that files a
+  `[Self-report]` issue in this repo through `POST /api/self-report`, with the
+  app version, wizard step, route, viewport, a connected yes/no and the last API
+  errors attached. Credentials, connection settings, cookies and the caller IP
+  never reach the issue (pinned by tests). Rate-limited to 5 reports per hour
+  per IP. With no `GITHUB_SELF_REPORT_TOKEN` the app starts normally and the
+  endpoint answers 503 `not_configured`.
+
+### Deploy notes
+- Reporting is off until the server has `GITHUB_SELF_REPORT_TOKEN` (issues write
+  + contents write) and the repo has the `used-for-self-reports-do-not-delete`
+  branch. nginx still caps `/contextbuilder/api/` at 5 MB, so larger attachment
+  sets get a 413 until that is raised.
+
 ## [0.10.22] - 2026-10-16
 
 ### Added

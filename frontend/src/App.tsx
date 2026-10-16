@@ -4,6 +4,7 @@ import type { SessionUser } from './api'
 import { AppearanceToggle } from './components/AppearanceToggle'
 import { ConnectionPanel } from './components/ConnectionPanel'
 import { Footer } from './components/Footer'
+import { HelpButton } from './components/HelpButton'
 import { SignIn } from './components/SignIn'
 import { BrandMark, LoadingState } from './components/common'
 import { Wizard } from './Wizard'
@@ -134,6 +135,7 @@ export default function App() {
               Signed in as <strong>{user.username}</strong>
             </span>
             <AppearanceToggle />
+            <HelpButton user={user.username} connected={connected} />
             <button type="button" className="btn-secondary" onClick={() => setPanel('')}>
               <span className={connected ? 'badge badge-ok' : 'badge badge-gray'}>
                 {connected ? '● connected' : '○ not connected'}
