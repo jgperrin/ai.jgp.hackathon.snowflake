@@ -25,11 +25,14 @@ public class StandardsValidator {
     private final JsonMapper json = JsonMapper.builder().build();
     private final Schema odcs;
     private final Schema odps;
+    private final Schema ossie;
 
     public StandardsValidator() {
         SchemaRegistry registry = SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2019_09);
         this.odcs = load(registry, "standards/odcs-json-schema-v3.2.0.json");
         this.odps = load(registry, "standards/odps-json-schema-v1.1.0.json");
+        this.ossie = load(SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12),
+                "standards/ossie-schema-0.2.0.dev0.json");
     }
 
     static Schema load(SchemaRegistry registry, String path) {
@@ -52,6 +55,11 @@ public class StandardsValidator {
         return schema.validate(json.valueToTree(document)).stream()
                 .map(e -> new Problem(label, String.valueOf(e.getInstanceLocation()), e.getMessage()))
                 .toList();
+    }
+
+    /** OSI/Apache Ossie semantic model; returns readable errors, empty when valid. */
+    public List<String> validateOsi(Map<String, Object> model) {
+        return check(ossie, model, "OSI").stream().map(p -> p.path() + ": " + p.message()).toList();
     }
 
     public Validation validateBundle(Bundle bundle) {
