@@ -16,4 +16,5 @@ public record Proposal(String id, String contractId, String table, String column
     public static final String TAG = "tag";
     public static final String QUALITY_RULE = "qualityRule";
     public static final String SLA = "sla";
+    public static final String PRIMARY_KEY = "primaryKey";
 }

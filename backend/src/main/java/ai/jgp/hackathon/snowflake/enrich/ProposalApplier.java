@@ -37,6 +37,14 @@ public final class ProposalApplier {
                     }
                     target.put("classification", String.valueOf(p.value()));
                 }
+                case Proposal.PRIMARY_KEY -> {
+                    if (p.column() == null) {
+                        throw new IllegalArgumentException("Primary key applies to a column");
+                    }
+                    target.put("primaryKey", true);
+                    target.put("primaryKeyPosition", 1);
+                    target.put("required", true);
+                }
                 case Proposal.TAG -> {
                     List<Object> tags = list(target, "tags");
                     if (!tags.contains(p.value())) {

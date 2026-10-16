@@ -34,8 +34,9 @@ public class ConnectionRegistry {
     ConnectionRegistry(SnowflakeConnector connector, CortexProperties server, AuthProperties auth) {
         this.connector = connector;
         if (server.account() != null && !server.account().isBlank() && auth.demoUser() != null) {
-            profiles.put(auth.demoUser(), new Profile(server.account(), server.user(), server.password(),
-                    server.warehouse(), server.database(), server.role()));
+            profiles.put(auth.demoUser(), new Profile(trim(server.account()), trim(server.user()),
+                    server.password() == null || server.password().isEmpty() ? null : server.password(),
+                    trim(server.warehouse()), trim(server.database()), trim(server.role())));
             log.info("Demo user's Snowflake profile seeded from server settings (account {})", server.account());
         }
     }
