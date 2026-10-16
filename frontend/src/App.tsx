@@ -220,9 +220,16 @@ export default function App() {
         <div className="page-header">
           <h1>From Snowflake schema to AI-ready data product</h1>
           <p className="standards" aria-label="Standards">
-            <span className="badge badge-indigo">Bitol ODCS v3.2</span>
-            <span className="badge badge-indigo">Bitol ODPS v1.1</span>
-            <span className="badge badge-gray">OSI/Apache Ossie</span>
+            {/* Linked (DIND#94): the same homes README.md:9 points at, plus Apache Ossie's. */}
+            <a className="badge badge-indigo" href="https://github.com/bitol-io/open-data-contract-standard" target="_blank" rel="noreferrer">
+              Bitol ODCS v3.2
+            </a>
+            <a className="badge badge-indigo" href="https://github.com/bitol-io/open-data-product-standard" target="_blank" rel="noreferrer">
+              Bitol ODPS v1.1
+            </a>
+            <a className="badge badge-gray" href="https://github.com/apache/ossie" target="_blank" rel="noreferrer">
+              OSI/Apache Ossie
+            </a>
           </p>
         </div>
 
