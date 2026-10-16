@@ -69,7 +69,7 @@ export default function App() {
       <header className="masthead">
         <div className="brand">
           <span className="logo" aria-hidden="true">◆</span>
-          <span className="brand-name">Contract Forge</span>
+          <span className="brand-name">Context Builder</span>
         </div>
         <h1>From Snowflake schema to data product</h1>
         <p className="standards">
