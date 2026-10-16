@@ -7,9 +7,10 @@
  * structural CSS (top bar, version pill, footer) is ported from the Schema Drift Advisor, the
  * family's other React-without-Tailwind surface.
  *
- * Appearance follows the system (prefers-color-scheme) and nothing forces a scheme. The guidelines
- * define no dark canvas, so dark mode re-maps the same ramps (gray-950/900/800 surfaces, lighter
- * indigo for text); the footer is dark chrome in both, as footer-spec.md requires.
+ * Appearance follows the system (prefers-color-scheme) unless the user picks Light or Dark in the
+ * top bar (DIND#59), which lands on <html> as data-theme; code never forces a scheme on its own. The
+ * guidelines define no dark canvas, so dark mode re-maps the same ramps (gray-950/900/800 surfaces,
+ * lighter indigo for text); the footer is dark chrome in both, as footer-spec.md requires.
  */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap');
 
@@ -67,6 +68,8 @@
   --danger-ring: rgb(220 38 38 / 0.25);
   --code-bg: var(--gray-800);
   --code-text: #e2e8f0;
+  --tag-bg: var(--teal-50);
+  --tag-text: var(--gray-800);
   --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.05);
   --shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.1), 0 4px 6px -4px rgb(15 23 42 / 0.1);
 
@@ -82,8 +85,13 @@
   color-scheme: light dark;
 }
 
+/*
+ * Dark roles. The same token set twice, because a media query and an attribute cannot share one
+ * rule: System (no data-theme) follows the OS, and an explicit Dark applies whatever the OS says.
+ * Keep the two blocks identical.
+ */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --canvas: var(--gray-950);
     --surface: var(--gray-900);
     --surface-2: var(--gray-800);
@@ -110,9 +118,53 @@
     --danger-bg: rgb(220 38 38 / 0.14);
     --danger-ring: rgb(248 113 113 / 0.3);
     --code-bg: var(--gray-950);
+    --tag-bg: rgb(32 184 187 / 0.14);
+    --tag-text: var(--gray-100);
     --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
     --shadow-lg: 0 10px 25px rgb(0 0 0 / 0.5);
   }
+}
+
+:root[data-theme='dark'] {
+  --canvas: var(--gray-950);
+  --surface: var(--gray-900);
+  --surface-2: var(--gray-800);
+  --header-bg: #0c1120; /* the Dark Header Bar chrome (themes.md) */
+  --border: var(--gray-800);
+  --border-strong: var(--gray-700);
+  --heading: var(--gray-50);
+  --text: var(--gray-200);
+  --body: var(--gray-300);
+  --muted: var(--gray-400);
+  --accent: var(--indigo-300);
+  --accent-hover: var(--indigo-200);
+  --accent-soft: rgb(26 109 232 / 0.16);
+  --accent-soft-border: rgb(65 131 240 / 0.4);
+  --accent-on-soft: var(--indigo-200);
+  --focus: var(--indigo-400);
+  --ok: #86efac; /* green-300 */
+  --ok-bg: rgb(22 163 74 / 0.14);
+  --ok-ring: rgb(74 222 128 / 0.3);
+  --warn: #fcd34d; /* amber-300 */
+  --warn-bg: rgb(217 119 6 / 0.14);
+  --warn-ring: rgb(251 191 36 / 0.3);
+  --danger: #fca5a5; /* red-300 */
+  --danger-bg: rgb(220 38 38 / 0.14);
+  --danger-ring: rgb(248 113 113 / 0.3);
+  --code-bg: var(--gray-950);
+  --tag-bg: rgb(32 184 187 / 0.14);
+  --tag-text: var(--gray-100);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 25px rgb(0 0 0 / 0.5);
+}
+
+/* An explicit choice pins native controls (scrollbars, selects, textareas) to the same shade. */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
 }
 
 * {
@@ -244,6 +296,42 @@ a {
 .account-user strong {
   color: var(--text);
   font-weight: 600;
+}
+
+/* System / Light / Dark switch (DIND#59): a segmented group of icon buttons; the pressed one is filled. */
+.appearance-toggle {
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+
+.appearance-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.appearance-btn:hover {
+  color: var(--heading);
+}
+
+.appearance-btn[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow:
+    var(--shadow-sm),
+    inset 0 0 0 1px var(--border-strong);
 }
 
 .content {
@@ -1111,22 +1199,14 @@ button:disabled {
 
 .kind-classification,
 .kind-tag {
-  background: var(--teal-50);
-  color: var(--gray-800);
+  background: var(--tag-bg);
+  color: var(--tag-text);
   box-shadow: inset 0 0 0 1px var(--teal-600);
 }
 
 .kind-qualityRule {
   background: var(--warn-bg);
   color: var(--warn);
-}
-
-@media (prefers-color-scheme: dark) {
-  .kind-classification,
-  .kind-tag {
-    background: rgb(32 184 187 / 0.14);
-    color: var(--gray-100);
-  }
 }
 
 .status {
