@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.32] - 2026-10-16
+
+### Added
+- About (DIND#82): a new item in the profile menu opens a view with the Context
+  Builder poster (`art/github2.jpg`, now bundled) as a full-bleed cover background
+  under a scrim. The copy covers what the app does, the five steps, the
+  standards it writes, the repository link and the prototype disclaimer. The
+  wizard stays mounted underneath, so Back returns to it unchanged.
+
 ## [0.10.31] - 2026-10-16
 
 ### Fixed
