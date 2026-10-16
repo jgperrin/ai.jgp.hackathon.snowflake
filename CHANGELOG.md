@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.27] - 2026-10-16
+
+### Changed
+- Profile menu (DIND#69): the top bar's "Signed in as", connection badge and
+  Sign out button fold into one menu on the right (initials, name, status dot).
+  It holds the Snowflake connection, with its state shown as Ready, Not
+  connected or Needs setup, and Sign out. Full menu keyboard support: arrows,
+  Home/End, Escape returns focus, click outside closes.
+
 ## [0.10.26] - 2026-10-16
 
 ### Changed
