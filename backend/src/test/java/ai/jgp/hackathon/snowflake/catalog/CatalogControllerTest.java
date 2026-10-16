@@ -24,7 +24,8 @@ class CatalogControllerTest {
     void listsDatabases() throws Exception {
         mockMvc.perform(get("/api/catalog/databases"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("FINSERV_DW"));
+                .andExpect(jsonPath("$[0].name").value("FINSERV_DW"))
+                .andExpect(jsonPath("$[0].system").value(false));
     }
 
     @Test
