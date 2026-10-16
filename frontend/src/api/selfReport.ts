@@ -78,6 +78,12 @@ const PATH = `${import.meta.env.BASE_URL}api/self-report`
 
 /** Maps the backend's stable {message, reason} to copy; never throws. */
 export async function submitReport(description: string, files: File[], context: ReportContext): Promise<ReportResult> {
+  // Under dev:mock nothing leaves the browser: the Vite proxy would otherwise hand this to
+  // whatever backend is on :8080 (DIND#74). Same guard as api/index.ts, so builds drop it.
+  if (import.meta.env.DEV && import.meta.env.VITE_MOCK === '1') {
+    const reportId = Math.random().toString(16).slice(2, 10)
+    return { ok: true, issueUrl: `https://mock.invalid/self-report/${reportId}`, reportId }
+  }
   const form = new FormData()
   form.append('description', description)
   form.append('context', JSON.stringify(context))
