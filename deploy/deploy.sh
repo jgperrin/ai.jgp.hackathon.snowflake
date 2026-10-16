@@ -119,4 +119,21 @@ echo "  200, and the page carries the app title"
 # falls through to the SPA and returns index.html, so probing it would prove
 # nothing.
 
+say "Pruning old jars, keeping the two newest"
+# JGP's rule (2026-10-16): the current release plus one previous, so rollback
+# still has a target. Each jar is ~119 MB and nothing else ever removes them —
+# a dozen deploys had reached 1.2 GB before this existed.
+#
+# Deliberately last: a failed deploy must not delete the jar it would roll back to.
+ssh "$HOST" "APP_DIR='${APP_DIR}' bash -s" <<'REMOTE'
+set -e
+cd "$APP_DIR"
+ls -1 snowflake-*.jar 2>/dev/null | sort -Vr | tail -n +3 | while read -r f; do
+  printf '  removing %s\n' "$f"
+  rm -f -- "$f"
+done
+printf '  kept:\n'
+ls -1 snowflake-*.jar 2>/dev/null | sed 's/^/    /'
+REMOTE
+
 say "Done — ${VERSION} is live at ${PUBLIC_URL}/"
