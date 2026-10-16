@@ -127,4 +127,13 @@ class ConnectionRegistryTest {
         assertThat(new Profile("acme-lab", "U", "p", "DEFAULT WH", null, "SYSADMIN").jdbcUrl())
                 .isEqualTo("jdbc:snowflake://acme-lab.snowflakecomputing.com/?warehouse=DEFAULT+WH&role=SYSADMIN");
     }
+
+    @Test
+    void blankServerSettingsSeedAsAbsent() {
+        CortexProperties server = new CortexProperties("acme-lab", "USER", "pw", " ", "DB", null, "", "m");
+        ConnectionRegistry r = new ConnectionRegistry(connector, server, AUTH);
+        assertThat(r.profile("jgp").role()).isNull();
+        assertThat(r.profile("jgp").warehouse()).isNull();
+        assertThat(r.view("jgp").role()).isNull();
+    }
 }
