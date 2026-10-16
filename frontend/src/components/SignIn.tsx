@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { api } from '../api'
 import type { Credentials, SessionUser } from '../api'
 import { messageOf } from '../lib/util'
-import { Spinner } from './common'
+import { BrandMark, Spinner } from './common'
 
 interface Props {
   onSignedIn: (user: SessionUser) => void
@@ -42,17 +42,18 @@ export function SignIn({ onSignedIn }: Props) {
   }
 
   return (
-    <div className="signin">
+    <main className="signin">
       <form className="card signin-card" onSubmit={(event) => void submit(event)}>
         <div className="brand">
-          <span className="logo" aria-hidden="true">◆</span>
+          <BrandMark />
           <span className="brand-name">Context Builder</span>
+          <span className="brand-badge">v{__APP_VERSION__}</span>
         </div>
         <h1 className="signin-title">Sign in</h1>
         <p className="muted signin-sub">From Snowflake schema to AI-ready data product.</p>
 
         {demo && (
-          <p className="banner banner-ok signin-demo">
+          <p className="banner banner-info signin-demo">
             <span className="banner-text">
               Judges: sign in with <strong className="mono">{demo.username}</strong> /{' '}
               <strong className="mono">{demo.password}</strong>
@@ -86,6 +87,7 @@ export function SignIn({ onSignedIn }: Props) {
 
         {error && (
           <p className="field-error" role="alert">
+            <span aria-hidden="true">⚠ </span>
             {error}
           </p>
         )}
@@ -96,6 +98,6 @@ export function SignIn({ onSignedIn }: Props) {
           </button>
         </div>
       </form>
-    </div>
+    </main>
   )
 }

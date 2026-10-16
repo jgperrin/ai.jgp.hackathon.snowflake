@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
@@ -8,9 +9,15 @@ import { defineConfig } from 'vite'
  */
 const BASE = '/contextbuilder/'
 
+/** The app version shown in the header pill and the footer (ops/ux footer-spec), read from package.json. */
+const APP_VERSION = (JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string }).version
+
 // https://vite.dev/config/
 export default defineConfig({
   base: BASE,
+  define: {
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
+  },
   plugins: [react()],
   server: {
     port: 5173,
