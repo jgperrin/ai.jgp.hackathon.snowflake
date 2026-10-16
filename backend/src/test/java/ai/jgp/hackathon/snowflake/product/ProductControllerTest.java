@@ -63,4 +63,11 @@ class ProductControllerTest {
                         .content("{\"database\":\"FINSERV_DW\",\"schemas\":[]}"))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void blankSchemaNameIsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/products/generate").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"database\":\"FINSERV_DW\",\"schemas\":[{\"schema\":\" \"}]}"))
+                .andExpect(status().isBadRequest());
+    }
 }

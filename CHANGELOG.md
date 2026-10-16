@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.12] - 2026-10-16
+
+### Fixed
+- Generate no longer logs deprecated container `@Valid` warnings (DIND#43).
+
 ## [0.10.11] - 2026-10-16
 
 ### Changed
