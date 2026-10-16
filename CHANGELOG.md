@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.6] - 2026-10-16
+
+### Removed
+- Basic auth on tools.actianlabs.com/contextbuilder (DIND#31). It was added at
+  provisioning because this tool reaches a live Snowflake catalog while
+  `/schema` and `/dpcompare` are static comparators; JGP removed it the same day.
+
+### Changed
+- `deploy/deploy.sh` now asserts the public URL answers **200** and carries the
+  app title, instead of asserting a 401 without credentials.
+
+### Note
+- No artifact change: documentation and ops files only.
+
 ## [0.10.5] - 2026-10-16
 
 ### Added

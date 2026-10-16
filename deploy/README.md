@@ -6,7 +6,7 @@ separately checkable so a failure tells you where it happened.
 | | |
 |---|---|
 | Public URL | `https://tools.actianlabs.com/contextbuilder/` |
-| Access | **Gated** — nginx basic auth (`contextbuilder` / `~/GitHub/ops && ./bin/all-creds contextbuilder web password`) |
+| Access | **Open** — no auth, no landing-page card (JGP, 2026-10-16) |
 | Runs on | the **api VM**, `10.0.2.101` (`ssh api`, user `jgp`) — *not* cahya |
 | Backend | `/opt/contextbuilder/contextbuilder.jar`, systemd unit `contextbuilder`, `127.0.0.1:8093` |
 | Frontend | `/var/www/tools.actianlabs.com/contextbuilder/` (www-data) |
@@ -56,8 +56,9 @@ VERSION=0.10.3 ./deploy/deploy.sh
 
 It runs the backend tests, builds both artifacts, refuses to continue if the
 bundle is missing the `/contextbuilder` prefix, uploads, restarts, and smoke
-tests — including asserting that the public URL returns **401** without
-credentials, so an accidental auth removal cannot ship quietly.
+tests — asserting the public URL answers **200** and carries the app title, so a
+stale bundle cannot ship quietly. There is no credential to assert: the tool is
+open (see Access above).
 
 ## First-time provisioning (already done, 2026-10-16 — kept for rebuilds)
 
@@ -79,26 +80,21 @@ ssh api 'sudo mv /tmp/contextbuilder.service /etc/systemd/system/ \
 ssh api 'sudo nginx -t && sudo systemctl reload nginx'
 ```
 
-### Basic auth
+### Auth
 
-`htpasswd` is **not installed** on the api VM and does not need to be —
-`openssl passwd -apr1` produces a hash nginx accepts:
+None, deliberately. Basic auth was added at provisioning on the reasoning that
+this tool reaches a live Snowflake catalog while `/schema` and `/dpcompare` are
+static comparators; JGP removed it the same day. The vhost carries no
+`auth_basic` and `/etc/nginx/.htpasswd-contextbuilder` is gone.
 
-```bash
-PW=$(openssl rand -base64 24 | tr -d '/+=' | cut -c1-24)
-HASH=$(printf '%s' "$PW" | openssl passwd -apr1 -stdin)
-ssh api "printf 'contextbuilder:%s\n' '$HASH' | sudo tee /etc/nginx/.htpasswd-contextbuilder"
-sudo chmod 640 /etc/nginx/.htpasswd-contextbuilder && sudo chown root:www-data /etc/nginx/.htpasswd-contextbuilder
-```
-
-The password itself lives in `~/.ssh/all-creds` as `contextbuilder:web:password`.
+If it is ever reinstated, `htpasswd` is **not** installed on the api VM and does
+not need to be — `openssl passwd -apr1` produces a hash nginx accepts. Note the
+`.htpasswd` file must be readable by `www-data`.
 
 ## Verify
 
 ```bash
-curl -sI  https://tools.actianlabs.com/contextbuilder/            # 401 without creds
-PW=$(cd ~/GitHub/ops && ./bin/all-creds contextbuilder web password)
-curl -s -u "contextbuilder:$PW" https://tools.actianlabs.com/contextbuilder/ | grep /contextbuilder/assets/
+curl -s https://tools.actianlabs.com/contextbuilder/ | grep /contextbuilder/assets/
 ssh api 'curl -s localhost:8093/actuator/health'                  # {"status":"UP"}
 ```
 
@@ -137,7 +133,6 @@ For the vhost, timestamped backups sit beside it:
 | 404s on `/api/...` (no prefix) | `src/api/http.ts` has hardcoded paths, or built from a pre-fix commit |
 | **502** on catalog / enrich / Cortex | Backend up, Snowflake not: check `/opt/contextbuilder/.env`. Hikari is set not to validate at boot, so the service starts regardless — by design |
 | 502 on *everything* including `/actuator/health` on loopback | Service not listening; `journalctl -u contextbuilder -n 80` |
-| Login loop / 401 with the right password | `.htpasswd-contextbuilder` perms — must be readable by `www-data` |
 | `503` after a vhost edit | Reload failed; `ssh api 'sudo nginx -t'` and restore the `.bak` |
 | Service restart-loops | Bad `ExecStart` java path, or a malformed `.env` (a `$(...)` or quoted value) |
 
