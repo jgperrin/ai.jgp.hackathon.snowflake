@@ -16,7 +16,8 @@ public final class SystemDatabases {
             "SNOWFLAKE",
             "SNOWFLAKE_SAMPLE_DATA",
             "ORGDATACLOUD$*", // organization data shares
-            "USERS$*"); // per-user scratch database
+            "USERS$*", // per-user scratch database, as first described
+            "USER$*"); // ... and as the lab account actually names it (USER$JGP, DIND#86)
 
     private SystemDatabases() {
     }
