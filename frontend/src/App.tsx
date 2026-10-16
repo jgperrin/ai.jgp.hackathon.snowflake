@@ -9,8 +9,10 @@ import { HelpButton } from './components/HelpButton'
 import { ProfileMenu } from './components/ProfileMenu'
 import type { ConnectionStatus } from './components/ProfileMenu'
 import { SignIn } from './components/SignIn'
+import { StoreView } from './components/StoreView'
 import { BrandMark, LoadingState } from './components/common'
 import { Wizard } from './Wizard'
+import type { WizardHandle } from './Wizard'
 
 /** undefined while the session is being checked, null when signed out. */
 type Session = SessionUser | null | undefined
@@ -36,6 +38,9 @@ export default function App() {
   const opener = useRef<HTMLElement | null>(null)
   // Drives the footer heart: false only when the session check could not reach the backend at all.
   const [backendUp, setBackendUp] = useState(true)
+  // The store view sits over the wizard, which stays mounted (hidden) so a visit costs it nothing.
+  const [view, setView] = useState<'wizard' | 'store'>('wizard')
+  const wizard = useRef<WizardHandle>(null)
 
   useEffect(() => {
     let live = true
@@ -59,6 +64,7 @@ export default function App() {
           setUser(null)
           setConnected(null)
           setPanel(null)
+          setView('wizard')
         } else {
           setPanel(event.message || NOT_CONNECTED_YET)
         }
@@ -117,6 +123,15 @@ export default function App() {
     setPanel(null)
     setConnected(null)
     setUser(null)
+    setView('wizard')
+  }
+
+  /** Open on a save: load it into the wizard, then go back to it. */
+  async function openSave(saveId: string) {
+    const bundle = await api.getProduct(saveId)
+    if (!wizard.current) throw new Error('Connect to Snowflake first to open a save in the wizard.')
+    await wizard.current.load(bundle)
+    setView('wizard')
   }
 
   const connectionStatus: ConnectionStatus =
@@ -162,6 +177,14 @@ export default function App() {
           <div className="account">
             <AppearanceToggle />
             <HelpButton user={user.username} connected={connected} />
+            <button
+              type="button"
+              className={view === 'store' ? 'btn-secondary is-active' : 'btn-secondary'}
+              aria-pressed={view === 'store'}
+              onClick={() => setView('store')}
+            >
+              Saved in Snowflake
+            </button>
             {/* Rightmost (DIND#69): the Snowflake connection and Sign out live in the profile menu. */}
             <ProfileMenu
               username={user.username}
@@ -173,7 +196,14 @@ export default function App() {
         </div>
       </header>
 
-      <main className="content">
+      {/* In the store view everything but the store pane is hidden by CSS, so the wizard stays mounted. */}
+      <main className={view === 'store' ? 'content is-store' : 'content'}>
+        {view === 'store' && (
+          <div className="store-pane">
+            {/* Remounted when the connection changes, so saving one reloads the store it points at. */}
+            <StoreView key={String(connected)} onOpen={openSave} onBack={() => setView('wizard')} />
+          </div>
+        )}
         <div className="page-header">
           <h1>From Snowflake schema to AI-ready data product</h1>
           <p className="standards" aria-label="Standards">
@@ -186,7 +216,7 @@ export default function App() {
         {connected === null && <LoadingState caption="Checking your Snowflake connection…" />}
         {connected !== null && <ConnectionCard ready={connected} onOpen={openPanel} />}
         {/* Keyed by user so a different sign-in never sees the previous user's bundle. */}
-        {connected && <Wizard key={user.username} />}
+        {connected && <Wizard key={user.username} ref={wizard} onBrowseStore={() => setView('store')} />}
       </main>
 
       {footer}

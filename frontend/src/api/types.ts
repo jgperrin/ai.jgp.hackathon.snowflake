@@ -180,6 +180,32 @@ export interface SavedProduct {
   savedAt: string
 }
 
+/** One artifact of a save as the store lists it: ODPS product, ODCS contract or OSI/Apache Ossie model. */
+export interface ArtifactSummary {
+  artifactId: string
+  kind: string
+  name: string | null
+  version: string | null
+  status: string | null
+}
+
+/** One save in DATA_PRODUCTS.ARTIFACTS; name and version are its product's (null if it has none). */
+export interface SavedSave {
+  saveId: string
+  productId: string
+  name: string | null
+  version: string | null
+  savedAt: string
+  savedBy: string | null
+  artifacts: ArtifactSummary[]
+}
+
+/** One stored artifact with its YAML exactly as saved (and the document as JSON). */
+export interface SavedArtifact extends ArtifactSummary {
+  yaml: string | null
+  json: string | null
+}
+
 export interface OsiExport {
   yaml: string
   valid: boolean
@@ -254,5 +280,9 @@ export interface Api {
   save(bundle: Bundle): Promise<SaveResult>
   listProducts(): Promise<SavedProduct[]>
   getProduct(id: string): Promise<Bundle>
+  /** Every save in the store, all kinds, newest first (bounded server-side). */
+  listSaves(): Promise<SavedSave[]>
+  /** One save's artifacts as stored, product first. */
+  getSaveArtifacts(id: string): Promise<SavedArtifact[]>
   exportOsi(bundle: Bundle): Promise<OsiExport>
 }

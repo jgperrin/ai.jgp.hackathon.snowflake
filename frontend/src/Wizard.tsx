@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useImperativeHandle, useState } from 'react'
+import type { Ref } from 'react'
 import { api } from './api'
 import type { Bundle, BundleYaml, GenerateRequest } from './api'
 import { AnalyzeStep } from './components/AnalyzeStep'
@@ -19,7 +20,18 @@ const STEPS = [
 
 type StepKey = (typeof STEPS)[number]['key']
 
-export function Wizard() {
+/** What the shell can do to a running wizard: load a saved bundle from the store view. */
+export interface WizardHandle {
+  load: (bundle: Bundle) => Promise<void>
+}
+
+interface Props {
+  ref?: Ref<WizardHandle>
+  /** Opens the full store view (step 5 links to it). */
+  onBrowseStore: () => void
+}
+
+export function Wizard({ ref, onBrowseStore }: Props) {
   const [step, setStep] = useState<StepKey>('source')
   const [bundle, setBundle] = useState<Bundle | null>(null)
   // Bumped on every new or loaded bundle, so per-bundle step state (proposals, DQ runs) starts fresh.
@@ -58,6 +70,9 @@ export function Wizard() {
       setGenerating(false)
     }
   }
+
+  // Opening a save from the store view lands it exactly where step 5's Open does.
+  useImperativeHandle(ref, () => ({ load: replaceBundle }))
 
   const reachable = (key: StepKey) => key === 'source' || bundle !== null
   const index = STEPS.findIndex((s) => s.key === step)
@@ -111,7 +126,7 @@ export function Wizard() {
               <VerifyStep key={generation} bundle={bundle} />
             </div>
             <div hidden={step !== 'publish'}>
-              <PublishStep bundle={bundle} onLoad={replaceBundle} />
+              <PublishStep bundle={bundle} onLoad={replaceBundle} onBrowseStore={onBrowseStore} />
             </div>
           </>
         )}

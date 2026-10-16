@@ -14,7 +14,9 @@ import ai.jgp.hackathon.snowflake.auth.UserContext;
 import ai.jgp.hackathon.snowflake.connection.ConnectionModel;
 import ai.jgp.hackathon.snowflake.connection.ConnectionRegistry;
 import ai.jgp.hackathon.snowflake.store.StoreModel.Artifact;
+import ai.jgp.hackathon.snowflake.store.StoreModel.ArtifactSummary;
 import ai.jgp.hackathon.snowflake.store.StoreModel.SavedProduct;
+import ai.jgp.hackathon.snowflake.store.StoreModel.StoredRow;
 
 @Component
 @Profile("!local")
@@ -66,6 +68,15 @@ class JdbcArtifactStore implements ArtifactStore {
         String database = ensureTable();
         return jdbc.query(StoreSql.latest(database), (rs, i) -> new SavedProduct(rs.getString("SAVE_ID"),
                 rs.getString("NAME"), rs.getString("VERSION"), rs.getString("SAVED_AT")));
+    }
+
+    @Override
+    public List<StoredRow> saves() {
+        String database = ensureTable();
+        return jdbc.query(StoreSql.saves(database), (rs, i) -> new StoredRow(rs.getString("SAVE_ID"),
+                rs.getString("PRODUCT_ID"), rs.getString("SAVED_AT"), rs.getString("SAVED_BY"),
+                new ArtifactSummary(rs.getString("ARTIFACT_ID"), rs.getString("KIND"), rs.getString("NAME"),
+                        rs.getString("VERSION"), rs.getString("STATUS"))));
     }
 
     @Override

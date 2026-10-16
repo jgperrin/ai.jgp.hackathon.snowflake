@@ -163,5 +163,7 @@ export const httpApi: Api = {
   save: (bundle) => request('POST', `${API}/products/save`, bundleBody(bundle)),
   listProducts: () => request('GET', `${API}/products`),
   getProduct: (id) => request('GET', `${API}/products/${enc(id)}`),
+  listSaves: () => request('GET', `${API}/products/saves`),
+  getSaveArtifacts: (id) => request('GET', `${API}/products/${enc(id)}/artifacts`),
   exportOsi: (bundle) => request('POST', `${API}/export/osi`, bundleBody(bundle)),
 }

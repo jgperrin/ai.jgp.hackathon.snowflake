@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.30] - 2026-10-16
+
+### Added
+- "Saved in Snowflake" (DIND#63): a top-bar view listing every save in
+  `<db>.DATA_PRODUCTS.ARTIFACTS`, newest first, versions included. Each save
+  expands to its product, contracts and OSI model, shows each artifact's stored
+  YAML (Copy / Download), and can be opened into the wizard. The wizard stays
+  mounted underneath, so its step and bundle survive a visit. Step 5 links to it.
+- `GET /api/products/saves` (read-only, `LIMIT 200` artifact rows) and
+  `GET /api/products/{id}/artifacts` (UUID-guarded, bind parameter).
+
 ## [0.10.29] - 2026-10-16
 
 ### Fixed

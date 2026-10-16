@@ -47,6 +47,13 @@ final class StoreSql {
                 + " ORDER BY SAVED_AT DESC LIMIT 100";
     }
 
+    /** Every save of every product, all kinds: the store view groups the rows by save. */
+    static String saves(String database) {
+        return "SELECT SAVE_ID, PRODUCT_ID, ARTIFACT_ID, KIND, NAME, VERSION, STATUS, SAVED_BY,"
+                + " TO_VARCHAR(SAVED_AT, 'YYYY-MM-DD\"T\"HH24:MI:SSTZH:TZM') AS SAVED_AT FROM " + table(database)
+                + " ORDER BY SAVED_AT DESC, SAVE_ID, KIND LIMIT 200";
+    }
+
     static String load(String database) {
         return "SELECT ARTIFACT_ID, KIND, NAME, VERSION, STATUS, YAML, TO_JSON(DOC) AS DOC FROM " + table(database)
                 + " WHERE SAVE_ID = ? ORDER BY CASE KIND WHEN 'ODPS' THEN 0 WHEN 'ODCS' THEN 1 ELSE 2 END, ARTIFACT_ID";
