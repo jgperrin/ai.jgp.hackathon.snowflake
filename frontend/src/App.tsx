@@ -153,9 +153,9 @@ export default function App() {
         <div className="page-header">
           <h1>From Snowflake schema to AI-ready data product</h1>
           <p className="standards" aria-label="Standards">
-            <span className="badge badge-indigo">ODCS v3.2</span>
-            <span className="badge badge-indigo">ODPS v1.1</span>
-            <span className="badge badge-indigo">OSI/Apache Ossie</span>
+            <span className="badge badge-indigo">Bitol ODCS v3.2</span>
+            <span className="badge badge-indigo">Bitol ODPS v1.1</span>
+            <span className="badge badge-gray">OSI/Apache Ossie</span>
           </p>
         </div>
 

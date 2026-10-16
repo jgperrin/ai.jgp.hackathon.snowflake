@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
-## [0.10.24] - 2026-10-16
+## [0.10.25] - 2026-10-16
 
 ### Added
 - `deploy/README.md` opens with the deploying rule (DIND#71): the standing
@@ -13,6 +13,13 @@ All notable changes to this project are documented here. Backend and frontend ve
 
 ### Note
 - No artifact change: documentation only.
+
+## [0.10.24] - 2026-10-16
+
+### Changed
+- The standards pills under the headline credit Bitol: `Bitol ODCS v3.2`,
+  `Bitol ODPS v1.1`, and `OSI/Apache Ossie` drops to the muted grey badge, since
+  it is derived from the other two rather than a third standard (DIND#68).
 
 ## [0.10.23] - 2026-10-16
 
