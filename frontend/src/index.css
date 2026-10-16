@@ -1434,6 +1434,18 @@ button:disabled {
   margin: 0;
 }
 
+.connection-ready {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin: 0 0 1rem;
+}
+
+.connection-notice {
+  margin: 0;
+}
+
 /* ---------- connection panel (dialog) ---------- */
 .panel {
   width: min(36rem, calc(100vw - 2rem));

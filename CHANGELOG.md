@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.26] - 2026-10-16
+
+### Changed
+- A warm first connection (DIND#67). A profile the server already holds (the
+  demo user, seeded from `SNOWFLAKE_*`) now reads as ready: the wizard is usable
+  straight after sign-in, the connection panel no longer opens over it, and the
+  header says "ready" instead of "not connected". The pool still opens on first
+  use.
+- The connection view tells three states apart: nothing saved, saved but not
+  opened, connected (`state`: `NONE` / `SAVED` / `CONNECTED`; `connected` is
+  unchanged).
+- The panel opens prefilled: from the saved profile, or, when nothing is saved,
+  from the server's settings via the new `GET /api/me/connection/defaults`
+  (account, user, warehouse, database, role; blanks when unset; never the
+  password). The password field stays blank and write-only. The amber paragraph
+  is now one line, and the main-page card describes the real state.
+
 ## [0.10.25] - 2026-10-16
 
 ### Added

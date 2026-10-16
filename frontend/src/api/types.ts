@@ -196,6 +196,9 @@ export interface SessionUser {
   username: string
 }
 
+/** NONE: nothing saved. SAVED: a saved (or server-seeded) profile whose pool opens on first use. CONNECTED: open. */
+export type ConnectionState = 'NONE' | 'SAVED' | 'CONNECTED'
+
 /** The signed-in user's Snowflake connection profile. The password is write-only and never comes back. */
 export interface Connection {
   account: string | null
@@ -204,8 +207,18 @@ export interface Connection {
   database: string | null
   role: string | null
   passwordSet: boolean
+  state: ConnectionState
   connected: boolean
   error: string | null
+}
+
+/** The server's SNOWFLAKE_* values to prefill the form with. Never the password; '' means the server has none. */
+export interface ConnectionDefaults {
+  account: string
+  user: string
+  warehouse: string
+  database: string
+  role: string
 }
 
 /** PUT body; an empty or absent password keeps the saved one. */
@@ -227,6 +240,7 @@ export interface Api {
   /** The current session's user, or null when not signed in (401). */
   me(): Promise<SessionUser | null>
   getConnection(): Promise<Connection>
+  getConnectionDefaults(): Promise<ConnectionDefaults>
   /** Tests the connection first; a failing test throws ApiError(400) with Snowflake's reason and saves nothing. */
   saveConnection(update: ConnectionUpdate): Promise<Connection>
   listDatabases(): Promise<Database[]>

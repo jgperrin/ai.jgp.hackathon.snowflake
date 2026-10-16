@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ApiError, MOCK, api, onSessionEvent } from './api'
 import type { SessionUser } from './api'
 import { AppearanceToggle } from './components/AppearanceToggle'
+import { ConnectionCard } from './components/ConnectionCard'
 import { ConnectionPanel } from './components/ConnectionPanel'
 import { Footer } from './components/Footer'
 import { HelpButton } from './components/HelpButton'
@@ -12,7 +13,7 @@ import { Wizard } from './Wizard'
 /** undefined while the session is being checked, null when signed out. */
 type Session = SessionUser | null | undefined
 
-/** null while unknown (just signed in, being checked). */
+/** null while unknown (just signed in, being checked); true once a profile is saved, opened or not. */
 type ConnectionState = boolean | null
 
 const NOT_CONNECTED_YET = 'No Snowflake connection is saved for your profile yet.'
@@ -59,7 +60,8 @@ export default function App() {
     [],
   )
 
-  // Once signed in, find out whether there is a connection; without one, open the panel straight away.
+  // Once signed in, find out whether there is a connection. A saved or seeded profile opens on first use,
+  // so only a missing one (or a failed open) brings the panel up on its own.
   const username = user?.username
   useEffect(() => {
     if (!username) {
@@ -69,8 +71,8 @@ export default function App() {
     api.getConnection().then(
       (connection) => {
         if (!live) return
-        setConnected(connection.connected)
-        if (!connection.connected) {
+        setConnected(connection.state !== 'NONE')
+        if (connection.state === 'NONE' || connection.error) {
           setPanel(connection.error || NOT_CONNECTED_YET)
         }
       },
@@ -138,7 +140,7 @@ export default function App() {
             <HelpButton user={user.username} connected={connected} />
             <button type="button" className="btn-secondary" onClick={() => setPanel('')}>
               <span className={connected ? 'badge badge-ok' : 'badge badge-gray'}>
-                {connected ? '● connected' : '○ not connected'}
+                {connected ? '● ready' : '○ not connected'}
               </span>
               Snowflake connection
             </button>
@@ -160,22 +162,7 @@ export default function App() {
         </div>
 
         {connected === null && <LoadingState caption="Checking your Snowflake connection…" />}
-        {connected === false && (
-          <div className="card callout connect-card">
-            <div className="callout-icon" aria-hidden="true">
-              <BrandMark />
-            </div>
-            <div className="callout-text">
-              <h2>Connect to Snowflake to start</h2>
-              <p className="muted">
-                Context Builder reads your databases and saves data products with your own Snowflake account.
-              </p>
-            </div>
-            <button type="button" className="btn-primary" onClick={() => setPanel('')}>
-              Snowflake connection
-            </button>
-          </div>
-        )}
+        {connected !== null && <ConnectionCard ready={connected} onOpen={() => setPanel('')} />}
         {/* Keyed by user so a different sign-in never sees the previous user's bundle. */}
         {connected && <Wizard key={user.username} />}
       </main>

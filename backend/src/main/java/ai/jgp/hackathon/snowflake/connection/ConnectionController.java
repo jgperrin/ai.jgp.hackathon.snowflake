@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import ai.jgp.hackathon.snowflake.auth.UserContext;
+import ai.jgp.hackathon.snowflake.connection.ConnectionModel.Defaults;
 import ai.jgp.hackathon.snowflake.connection.ConnectionModel.Update;
 import ai.jgp.hackathon.snowflake.connection.ConnectionModel.View;
 
@@ -23,6 +24,12 @@ class ConnectionController {
     @GetMapping
     View get() {
         return registry.view(UserContext.current());
+    }
+
+    /** The server's SNOWFLAKE_* values for prefilling the form: never the password. */
+    @GetMapping("/defaults")
+    Defaults defaults() {
+        return registry.defaults();
     }
 
     @PutMapping

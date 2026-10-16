@@ -29,17 +29,29 @@ public final class ConnectionModel {
 
         public View view(boolean connected, String error) {
             return new View(account, user, warehouse, database, role, password != null && !password.isEmpty(),
-                    connected, error);
+                    connected ? State.CONNECTED : State.SAVED, connected, error);
         }
+    }
+
+    /** Nothing saved; saved (or seeded) but no pool opened yet; a pool is open. */
+    public enum State {
+        NONE, SAVED, CONNECTED
     }
 
     /** What the browser sees: everything except the password. */
     public record View(String account, String user, String warehouse, String database, String role,
-            boolean passwordSet, boolean connected, String error) {
+            boolean passwordSet, State state, boolean connected, String error) {
 
         static View empty() {
-            return new View(null, null, null, null, null, false, false, null);
+            return new View(null, null, null, null, null, false, State.NONE, false, null);
         }
+    }
+
+    /**
+     * The server's SNOWFLAKE_* settings the form may prefill, and nothing else: never the password.
+     * Blank means "the server has none"; values are never null.
+     */
+    public record Defaults(String account, String user, String warehouse, String database, String role) {
     }
 
     /** {@code password} empty or absent keeps the saved one. */

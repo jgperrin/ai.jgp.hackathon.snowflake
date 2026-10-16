@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { api } from '../api'
-import type { Connection } from '../api'
+import type { Connection, ConnectionDefaults, ConnectionState } from '../api'
 import { messageOf } from '../lib/util'
 import { Spinner } from './common'
 
@@ -24,8 +24,19 @@ const FIELDS: { key: Field; label: string; hint: string; placeholder: string }[]
 
 const blank: Record<Field, string> = { account: '', user: '', warehouse: '', role: '', database: '' }
 
+function fieldsOf(source: Connection | ConnectionDefaults): Record<Field, string> {
+  return {
+    account: source.account ?? '',
+    user: source.user ?? '',
+    warehouse: source.warehouse ?? '',
+    role: source.role ?? '',
+    database: source.database ?? '',
+  }
+}
+
 /**
  * The signed-in user's Snowflake connection profile, in a modal dialog.
+ * The five fields show the saved profile or, with nothing saved, the server's defaults.
  * The password is write-only: never pre-filled, and blank on save keeps the saved one.
  */
 export function ConnectionPanel({ reason, onClose, onSaved }: Props) {
@@ -37,6 +48,9 @@ export function ConnectionPanel({ reason, onClose, onSaved }: Props) {
   const [saving, setSaving] = useState(false)
   // Status line: connected, or Snowflake's error text.
   const [connected, setConnected] = useState(false)
+  const [state, setState] = useState<ConnectionState>('NONE')
+  // True when the empty form was filled in from the server's defaults.
+  const [prefilled, setPrefilled] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -49,19 +63,25 @@ export function ConnectionPanel({ reason, onClose, onSaved }: Props) {
 
   useEffect(() => {
     let live = true
-    api.getConnection().then(
-      (connection) => {
+    async function load() {
+      const connection = await api.getConnection()
+      if (connection.state !== 'NONE') {
+        return { connection, values: fieldsOf(connection), prefilled: false }
+      }
+      // Nothing saved: start from the server's SNOWFLAKE_* values, when it has any. A failed read is just an empty form.
+      const defaults = await api.getConnectionDefaults().catch(() => null)
+      const hasDefaults = !!defaults && Object.values(defaults).some((v) => v)
+      return { connection, values: hasDefaults ? fieldsOf(defaults) : blank, prefilled: hasDefaults }
+    }
+    load().then(
+      (loaded) => {
         if (!live) return
-        setValues({
-          account: connection.account ?? '',
-          user: connection.user ?? '',
-          warehouse: connection.warehouse ?? '',
-          role: connection.role ?? '',
-          database: connection.database ?? '',
-        })
-        setPasswordSet(connection.passwordSet)
-        setConnected(connection.connected)
-        setError(connection.error ?? '')
+        setValues(loaded.values)
+        setPrefilled(loaded.prefilled)
+        setPasswordSet(loaded.connection.passwordSet)
+        setState(loaded.connection.state)
+        setConnected(loaded.connection.connected)
+        setError(loaded.connection.error ?? '')
         setLoading(false)
       },
       (cause) => {
@@ -84,6 +104,8 @@ export function ConnectionPanel({ reason, onClose, onSaved }: Props) {
       const saved = await api.saveConnection({ ...values, ...(password ? { password } : {}) })
       setPassword('')
       setPasswordSet(saved.passwordSet)
+      setState(saved.state)
+      setPrefilled(false)
       setConnected(saved.connected)
       setError(saved.error ?? '')
       if (saved.connected) {
@@ -116,15 +138,7 @@ export function ConnectionPanel({ reason, onClose, onSaved }: Props) {
           </button>
         </div>
 
-        {reason && !connected && (
-          <div className="banner banner-warn">
-            <span className="banner-text">
-              Context Builder reads your databases with your own Snowflake account. Enter and test your connection to
-              continue.
-              {`\n${reason}`}
-            </span>
-          </div>
-        )}
+        {!loading && !connected && <p className="muted connection-notice">{notice(state, prefilled, reason)}</p>}
 
         {loading ? (
           <Spinner label="Loading your connection…" />
@@ -163,7 +177,9 @@ export function ConnectionPanel({ reason, onClose, onSaved }: Props) {
               <span className="badge badge-ok">Connected ✓</span>
             ) : error ? (
               <span className="status-error">{error}</span>
-            ) : loading ? null : (
+            ) : loading ? null : state === 'SAVED' ? (
+              <span className="badge badge-gray">Saved · opens on first use</span>
+            ) : (
               <span className="muted">Not connected</span>
             )}
           </span>
@@ -175,6 +191,17 @@ export function ConnectionPanel({ reason, onClose, onSaved }: Props) {
       </form>
     </dialog>
   )
+}
+
+/** The panel's one line: why it is here and what is left to do. */
+function notice(state: ConnectionState, prefilled: boolean, reason: string): string {
+  if (state === 'SAVED') {
+    return reason || 'Your connection is saved and opens when you first use it. Change anything and Test & save.'
+  }
+  if (prefilled) {
+    return 'Filled in from the server’s settings: add your Snowflake password, then Test & save.'
+  }
+  return reason || 'Enter your Snowflake account details, then Test & save.'
 }
 
 function TextField({
