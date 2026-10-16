@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.29] - 2026-10-16
+
+### Fixed
+- Closing the Snowflake connection panel returns keyboard focus to whatever
+  opened it: the profile menu button (the menu item itself is gone by then) or
+  the main-page card's button. It no longer drops focus on the page body (DIND#78).
+
 ## [0.10.28] - 2026-10-16
 
 ### Fixed
