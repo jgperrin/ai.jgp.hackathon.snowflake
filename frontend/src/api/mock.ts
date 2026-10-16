@@ -1,12 +1,17 @@
 /*
  * DEV-ONLY in-memory backend, loaded by src/api/index.ts when VITE_MOCK=1.
  * Everything here is illustrative sample data (FINSERV_DW); nothing comes from
- * Snowflake. It mimics the backend contract closely enough to demo every step.
+ * Snowflake. It mimics the backend contract closely enough to demo every step,
+ * including sign-in (demo user jgp / odcs) and the per-user Snowflake connection:
+ * data calls answer 401 when signed out and 409 NO_CONNECTION until a connection
+ * is saved. Any account works; the password "wrong" fails the connection test.
  */
+import { ApiError, NO_CONNECTION } from './errors'
 import type {
   Api,
   Bundle,
   Column,
+  Connection,
   ContractDoc,
   ContractProperty,
   Database,
@@ -309,7 +314,10 @@ function applyOne(contract: ContractDoc, p: Proposal) {
 
 const saved = new Map<string, { meta: SavedProduct; bundle: Bundle }>()
 
-export const mockApi: Api = {
+type AuthKey = 'demoCredentials' | 'login' | 'logout' | 'me' | 'getConnection' | 'saveConnection'
+type DataApi = Omit<Api, AuthKey>
+
+const dataApi: DataApi = {
   async listDatabases() {
     await sleep(250)
     return clone(DATABASES)
@@ -470,4 +478,92 @@ export const mockApi: Api = {
     }
     return { yaml: yaml(doc), valid: true, errors: [] }
   },
+}
+
+/* ---------- sign-in and the per-user Snowflake connection ---------- */
+
+const DEMO = { username: 'jgp', password: 'odcs' }
+let session: string | null = null
+let connection: Connection = {
+  account: null,
+  user: null,
+  warehouse: null,
+  database: null,
+  role: null,
+  passwordSet: false,
+  connected: false,
+  error: null,
+}
+
+function requireSession(): void {
+  if (!session) throw new ApiError(401, 'Not signed in')
+}
+
+/** Every data call is gated exactly like the backend: 401 signed out, 409 without a connection. */
+function gated(api: DataApi): DataApi {
+  const out: Record<string, unknown> = {}
+  for (const [name, fn] of Object.entries(api) as [string, (...args: unknown[]) => Promise<unknown>][]) {
+    out[name] = async (...args: unknown[]) => {
+      requireSession()
+      if (!connection.connected) {
+        throw new ApiError(409, 'No Snowflake connection yet: enter your account details to continue.', NO_CONNECTION)
+      }
+      return fn(...args)
+    }
+  }
+  return out as unknown as DataApi
+}
+
+export const mockApi: Api = {
+  async demoCredentials() {
+    await sleep(100)
+    return { ...DEMO }
+  },
+  async login({ username, password }) {
+    await sleep(300)
+    if (username !== DEMO.username || password !== DEMO.password) {
+      throw new ApiError(401, 'Wrong username or password')
+    }
+    session = username
+    return { username }
+  },
+  async logout() {
+    await sleep(100)
+    session = null
+  },
+  async me() {
+    await sleep(100)
+    return session ? { username: session } : null
+  },
+  async getConnection() {
+    await sleep(150)
+    requireSession()
+    return { ...connection }
+  },
+  async saveConnection(update) {
+    await sleep(900)
+    requireSession()
+    const password = update.password || null
+    if (!password && !connection.passwordSet) {
+      throw new ApiError(400, 'Password is required for a new connection')
+    }
+    if (!update.account.trim() || !update.user.trim()) {
+      throw new ApiError(400, 'Account and user are required')
+    }
+    if (password === 'wrong') {
+      throw new ApiError(400, 'Incorrect username or password was specified. (illustrative mock error)')
+    }
+    connection = {
+      account: update.account,
+      user: update.user,
+      warehouse: update.warehouse || null,
+      database: update.database || null,
+      role: update.role || null,
+      passwordSet: true,
+      connected: true,
+      error: null,
+    }
+    return { ...connection }
+  },
+  ...gated(dataApi),
 }

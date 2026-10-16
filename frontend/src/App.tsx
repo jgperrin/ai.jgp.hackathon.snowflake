@@ -1,75 +1,136 @@
-import { useState } from 'react'
-import { MOCK, api } from './api'
-import type { Bundle, BundleYaml, GenerateRequest } from './api'
-import { AnalyzeStep } from './components/AnalyzeStep'
-import { DocumentsView } from './components/DocumentsView'
-import { PublishStep } from './components/PublishStep'
-import { SourceStep } from './components/SourceStep'
-import { VerifyStep } from './components/VerifyStep'
-import { ErrorBanner } from './components/common'
-import { messageOf } from './lib/util'
+import { useEffect, useState } from 'react'
+import { MOCK, api, onSessionEvent } from './api'
+import type { SessionUser } from './api'
+import { ConnectionPanel } from './components/ConnectionPanel'
+import { SignIn } from './components/SignIn'
+import { Spinner } from './components/common'
+import { Wizard } from './Wizard'
 
-const STEPS = [
-  { key: 'source', title: 'Source', blurb: 'Pick a database, its schemas and tables' },
-  { key: 'generate', title: 'Generate', blurb: 'ODPS product + one ODCS contract per schema' },
-  { key: 'analyze', title: 'Analyze', blurb: 'Cortex proposes, you accept, edit or reject' },
-  { key: 'verify', title: 'Verify', blurb: 'Run the data-quality rules on Snowflake' },
-  { key: 'publish', title: 'Publish', blurb: 'Save to Snowflake, export OSI/Apache Ossie' },
-] as const
+/** undefined while the session is being checked, null when signed out. */
+type Session = SessionUser | null | undefined
 
-type StepKey = (typeof STEPS)[number]['key']
+/** null while unknown (just signed in, being checked). */
+type ConnectionState = boolean | null
 
+const NOT_CONNECTED_YET = 'No Snowflake connection is saved for your profile yet.'
+
+/**
+ * The shell: sign-in gate, header with the signed-in user and the Snowflake
+ * connection panel, then the wizard. Global API events (401, 409 NO_CONNECTION)
+ * land here so no step has to handle them.
+ */
 export default function App() {
-  const [step, setStep] = useState<StepKey>('source')
-  const [bundle, setBundle] = useState<Bundle | null>(null)
-  // Bumped on every new or loaded bundle, so per-bundle step state (proposals, DQ runs) starts fresh.
-  const [generation, setGeneration] = useState(0)
-  const [yaml, setYaml] = useState<BundleYaml | null>(null)
-  const [yamlError, setYamlError] = useState('')
-  const [generating, setGenerating] = useState(false)
-  const [error, setError] = useState('')
+  const [user, setUser] = useState<Session>(undefined)
+  const [connected, setConnected] = useState<ConnectionState>(null)
+  // null: panel closed; a string: open, with the reason it opened on its own ('' when the user opened it).
+  const [panel, setPanel] = useState<string | null>(null)
 
-  /** Every change to the bundle goes through here so the YAML view never goes stale. */
-  async function updateBundle(next: Bundle) {
-    setBundle(next)
-    setYaml(null)
-    setYamlError('')
-    try {
-      setYaml(await api.toYaml(next))
-    } catch (cause) {
-      setYamlError(messageOf(cause))
+  useEffect(() => {
+    let live = true
+    api.me().then(
+      (me) => live && setUser(me),
+      () => live && setUser(null),
+    )
+    return () => {
+      live = false
     }
-  }
+  }, [])
 
-  async function replaceBundle(next: Bundle) {
-    setGeneration((g) => g + 1)
-    setStep('generate')
-    await updateBundle(next)
-  }
+  useEffect(
+    () =>
+      onSessionEvent((event) => {
+        if (event.kind === 'unauthorized') {
+          setUser(null)
+          setConnected(null)
+          setPanel(null)
+        } else {
+          setPanel(event.message || NOT_CONNECTED_YET)
+        }
+      }),
+    [],
+  )
 
-  async function generate(request: GenerateRequest) {
-    setGenerating(true)
-    setError('')
-    try {
-      await replaceBundle(await api.generate(request))
-    } catch (cause) {
-      setError(messageOf(cause))
-    } finally {
-      setGenerating(false)
+  // Once signed in, find out whether there is a connection; without one, open the panel straight away.
+  const username = user?.username
+  useEffect(() => {
+    if (!username) {
+      return
     }
+    let live = true
+    api.getConnection().then(
+      (connection) => {
+        if (!live) return
+        setConnected(connection.connected)
+        if (!connection.connected) {
+          setPanel(connection.error || NOT_CONNECTED_YET)
+        }
+      },
+      // A 401 is already handled globally; anything else, let the user fix it in the panel.
+      () => live && setConnected(false),
+    )
+    return () => {
+      live = false
+    }
+  }, [username])
+
+  async function signOut() {
+    try {
+      await api.logout()
+    } catch {
+      // Signing out locally is what matters; the session expires server-side anyway.
+    }
+    setPanel(null)
+    setConnected(null)
+    setUser(null)
   }
 
-  const reachable = (key: StepKey) => key === 'source' || bundle !== null
-  const index = STEPS.findIndex((s) => s.key === step)
-  const nextStep = STEPS[index + 1]
+  const mockStrip = MOCK && <div className="mock-strip">Mock backend · illustrative sample data, not Snowflake</div>
+
+  if (user === undefined) {
+    return (
+      <div className="app">
+        {mockStrip}
+        <div className="signin">
+          <Spinner label="Loading…" />
+        </div>
+      </div>
+    )
+  }
+
+  if (user === null) {
+    return (
+      <div className="app">
+        {mockStrip}
+        <SignIn onSignedIn={setUser} />
+      </div>
+    )
+  }
 
   return (
     <div className="app">
-      {MOCK && <div className="mock-strip">Mock backend · illustrative sample data, not Snowflake</div>}
+      {mockStrip}
       <header className="masthead">
-        <div className="brand">
-          <span className="logo" aria-hidden="true">◆</span>
-          <span className="brand-name">Context Builder</span>
+        <div className="topbar">
+          <div className="brand">
+            <span className="logo" aria-hidden="true">◆</span>
+            <span className="brand-name">Context Builder</span>
+          </div>
+          <span className="spacer" />
+          <div className="account">
+            <span className="account-user">
+              Signed in as <strong>{user.username}</strong>
+            </span>
+            <button type="button" className="btn-secondary btn-small" onClick={() => setPanel('')}>
+              <span
+                className={connected ? 'dot dot-ok' : 'dot'}
+                aria-label={connected ? 'connected' : 'not connected'}
+              />
+              Snowflake connection
+            </button>
+            <button type="button" className="btn-ghost btn-small" onClick={() => void signOut()}>
+              Sign out
+            </button>
+          </div>
         </div>
         <h1>From Snowflake schema to data product</h1>
         <p className="standards">
@@ -79,66 +140,24 @@ export default function App() {
         </p>
       </header>
 
-      <nav className="stepper" aria-label="Wizard steps">
-        {STEPS.map((s, i) => (
-          <button
-            key={s.key}
-            type="button"
-            className={s.key === step ? 'stepper-item is-current' : 'stepper-item'}
-            disabled={!reachable(s.key)}
-            aria-current={s.key === step ? 'step' : undefined}
-            onClick={() => setStep(s.key)}
-          >
-            <span className="stepper-num">{i + 1}</span>
-            <span className="stepper-text">
-              <span className="stepper-title">{s.title}</span>
-              <span className="stepper-blurb">{s.blurb}</span>
-            </span>
+      {connected === null && <Spinner label="Checking your Snowflake connection…" />}
+      {connected === false && (
+        <div className="card connect-card">
+          <h2>Connect to Snowflake to start</h2>
+          <p className="muted">
+            Context Builder reads your databases and saves data products with your own Snowflake account.
+          </p>
+          <button type="button" className="btn-primary" onClick={() => setPanel('')}>
+            Snowflake connection
           </button>
-        ))}
-      </nav>
-
-      <main>
-        <ErrorBanner error={error} onDismiss={() => setError('')} />
-
-        {/* Steps stay mounted (hidden) so moving around the wizard keeps selections, proposals and results. */}
-        <div hidden={step !== 'source'}>
-          <SourceStep busy={generating} onGenerate={(request) => void generate(request)} />
         </div>
+      )}
+      {/* Keyed by user so a different sign-in never sees the previous user's bundle. */}
+      {connected && <Wizard key={user.username} />}
 
-        {bundle && (
-          <>
-            <div hidden={step !== 'generate'}>
-              <section className="step">
-                <DocumentsView bundle={bundle} yaml={yaml} yamlError={yamlError} />
-              </section>
-            </div>
-            <div hidden={step !== 'analyze'}>
-              <AnalyzeStep
-                key={generation}
-                bundle={bundle}
-                onApplied={updateBundle}
-                onViewDocuments={() => setStep('generate')}
-              />
-            </div>
-            <div hidden={step !== 'verify'}>
-              <VerifyStep key={generation} bundle={bundle} />
-            </div>
-            <div hidden={step !== 'publish'}>
-              <PublishStep bundle={bundle} onLoad={replaceBundle} />
-            </div>
-          </>
-        )}
-
-        {bundle && step !== 'source' && nextStep && (
-          <div className="actions next-step">
-            <span className="spacer" />
-            <button type="button" className="btn-secondary btn-large" onClick={() => setStep(nextStep.key)}>
-              Next: {nextStep.title} →
-            </button>
-          </div>
-        )}
-      </main>
+      {panel !== null && (
+        <ConnectionPanel reason={panel} onClose={() => setPanel(null)} onSaved={() => setConnected(true)} />
+      )}
     </div>
   )
 }

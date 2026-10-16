@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.7] - 2026-10-16
+
+### Added
+- Sign-in page with the demo credentials from `GET /api/auth/demo` shown for the judges (DIND#28).
+- Header with the signed-in user, a **Snowflake connection** button and **Sign out** (DIND#28).
+- Snowflake connection panel: account, user, write-only password, warehouse, role and database
+  (where products are saved); **Test & save** shows "Connected ✓" or Snowflake's error (DIND#28).
+- Global handling: any 401 returns to sign-in; a 409 `NO_CONNECTION` opens the connection panel (DIND#28).
+- Dev mock (`npm run dev:mock`) covers sign-in (`jgp` / `odcs`) and the connection endpoints (DIND#28).
+
 ## [0.10.6] - 2026-10-16
 
 ### Removed

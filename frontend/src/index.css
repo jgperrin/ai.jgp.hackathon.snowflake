@@ -244,6 +244,7 @@ code {
 
 select,
 input[type='text'],
+input[type='password'],
 textarea {
   font: inherit;
   color: inherit;
@@ -993,4 +994,147 @@ button:disabled {
 
 .next-step {
   margin-top: 1.5rem;
+}
+
+/* ---------- sign-in, account bar, connection panel (DIND#28) ---------- */
+.signin {
+  min-height: 80vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 0;
+}
+
+.signin-card {
+  width: 100%;
+  max-width: 26rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.signin-title {
+  font-size: 1.8rem;
+  margin: 0.25rem 0 0;
+}
+
+.signin-sub {
+  margin: -0.5rem 0 0;
+}
+
+.signin-demo {
+  margin: 0;
+}
+
+.form-field {
+  display: block;
+}
+
+.form-field .field-label {
+  margin-bottom: 0.35rem;
+}
+
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.account-user {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.account-user strong {
+  color: var(--text);
+}
+
+.dot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--danger);
+}
+
+.dot-ok {
+  background: var(--ok);
+}
+
+.connect-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.connect-card h2,
+.connect-card p {
+  margin: 0;
+}
+
+.panel {
+  width: min(36rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.panel::backdrop {
+  background: rgb(10 5 25 / 0.45);
+}
+
+.panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem 1.4rem;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+}
+
+.panel-head h2 {
+  margin: 0;
+}
+
+.panel-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1rem;
+}
+
+.panel-fields .form-field:first-child,
+.panel-fields .form-field:last-child {
+  grid-column: 1 / -1;
+}
+
+.connection-status {
+  flex: 1 1 12rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.status-error {
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 720px) {
+  .panel-fields {
+    grid-template-columns: 1fr;
+  }
 }
