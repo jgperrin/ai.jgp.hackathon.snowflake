@@ -17,6 +17,7 @@ import ai.jgp.hackathon.snowflake.auth.UserContext;
 import ai.jgp.hackathon.snowflake.config.CortexProperties;
 import ai.jgp.hackathon.snowflake.connection.ConnectionModel.NoConnectionException;
 import ai.jgp.hackathon.snowflake.connection.ConnectionModel.Profile;
+import ai.jgp.hackathon.snowflake.connection.ConnectionModel.State;
 import ai.jgp.hackathon.snowflake.connection.ConnectionModel.Update;
 
 class ConnectionRegistryTest {
@@ -135,5 +136,34 @@ class ConnectionRegistryTest {
         assertThat(r.profile("jgp").role()).isNull();
         assertThat(r.profile("jgp").warehouse()).isNull();
         assertThat(r.view("jgp").role()).isNull();
+    }
+
+    @Test
+    void seededProfileReadsAsSavedUntilFirstUseThenConnected() {
+        CortexProperties server = new CortexProperties("acme-lab", "USER", "pw", "WH", "DB", null, null, "m");
+        ConnectionRegistry r = new ConnectionRegistry(connector, server, AUTH);
+        assertThat(r.view("jgp").state()).isEqualTo(State.SAVED);
+        assertThat(r.view("jgp").connected()).isFalse();
+        r.dataSource("jgp");
+        assertThat(r.view("jgp").state()).isEqualTo(State.CONNECTED);
+        assertThat(r.view("jgp").connected()).isTrue();
+    }
+
+    @Test
+    void withoutServerSettingsNothingIsSaved() {
+        ConnectionRegistry r = new ConnectionRegistry(connector, NO_SERVER, AUTH);
+        assertThat(r.view("jgp").state()).isEqualTo(State.NONE);
+        assertThat(r.view("nobody").state()).isEqualTo(State.NONE);
+        r.save("alice", new Update("acme", "ALICE", "pw", null, null, null));
+        assertThat(r.view("alice").state()).isEqualTo(State.CONNECTED);
+    }
+
+    @Test
+    void defaultsProjectTheServerSettingsWithoutThePassword() {
+        CortexProperties server = new CortexProperties(" acme-lab ", "USER", "pw", "WH", "DB", "S", "R", "m");
+        assertThat(new ConnectionRegistry(connector, server, AUTH).defaults())
+                .isEqualTo(new ConnectionModel.Defaults("acme-lab", "USER", "WH", "DB", "R"));
+        assertThat(new ConnectionRegistry(connector, NO_SERVER, AUTH).defaults())
+                .isEqualTo(new ConnectionModel.Defaults("", "", "", "", ""));
     }
 }
