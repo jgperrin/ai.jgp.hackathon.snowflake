@@ -40,6 +40,8 @@
 
   /* Roles, light. */
   --canvas: var(--gray-50);
+  /* Washes the About poster (DIND#82) so the copy card stands off it. */
+  --about-scrim: rgba(255, 255, 255, 0.35);
   --surface: #ffffff;
   --surface-2: var(--gray-100);
   --header-bg: #ffffff;
@@ -95,6 +97,8 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     --canvas: var(--gray-950);
+    /* Washes the About poster (DIND#82) so the copy card stands off it. */
+    --about-scrim: rgba(3, 7, 18, 0.45);
     --surface: var(--gray-900);
     --surface-2: var(--gray-800);
     --header-bg: #0c1120; /* the Dark Header Bar chrome (themes.md) */
@@ -131,6 +135,8 @@
 
 :root[data-theme='dark'] {
   --canvas: var(--gray-950);
+  /* Washes the About poster (DIND#82) so the copy card stands off it. */
+  --about-scrim: rgba(3, 7, 18, 0.45);
   --surface: var(--gray-900);
   --surface-2: var(--gray-800);
   --header-bg: #0c1120; /* the Dark Header Bar chrome (themes.md) */
@@ -1944,4 +1950,51 @@ input[type='radio'] {
 
 .store-artifacts .grid {
   margin: 0.25rem 0 0.5rem;
+}
+
+/* About (DIND#82): the poster owns the content area, cover + centred, under a scrim so the copy
+   card (palette surface) reads at AA in both modes. Header and footer keep their chrome. */
+.content.is-about {
+  max-width: none;
+  background-color: var(--canvas);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 0 100vmax var(--about-scrim);
+}
+
+.content.is-about > :not(.about-pane) {
+  display: none;
+}
+
+.about-pane {
+  width: 100%;
+  max-width: 46rem;
+  margin: 0 auto;
+}
+
+.about-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.5rem 1.75rem;
+}
+
+.about-card h1 {
+  margin: 0;
+  color: var(--heading);
+}
+
+.about-card p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.about-lede {
+  font-size: 1.05rem;
+  color: var(--heading);
+}
+
+.about-steps {
+  color: var(--heading);
 }

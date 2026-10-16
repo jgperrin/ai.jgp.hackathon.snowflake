@@ -10,6 +10,8 @@ import { ProfileMenu } from './components/ProfileMenu'
 import type { ConnectionStatus } from './components/ProfileMenu'
 import { SignIn } from './components/SignIn'
 import { StoreView } from './components/StoreView'
+import { AboutView } from './components/AboutView'
+import poster from './assets/about/github2.jpg'
 import { BrandMark, LoadingState } from './components/common'
 import { Wizard } from './Wizard'
 import type { WizardHandle } from './Wizard'
@@ -39,7 +41,8 @@ export default function App() {
   // Drives the footer heart: false only when the session check could not reach the backend at all.
   const [backendUp, setBackendUp] = useState(true)
   // The store view sits over the wizard, which stays mounted (hidden) so a visit costs it nothing.
-  const [view, setView] = useState<'wizard' | 'store'>('wizard')
+  // About (DIND#82) is the same kind of overlay: the wizard underneath keeps its state.
+  const [view, setView] = useState<'wizard' | 'store' | 'about'>('wizard')
   const wizard = useRef<WizardHandle>(null)
 
   useEffect(() => {
@@ -190,6 +193,7 @@ export default function App() {
               username={user.username}
               status={connectionStatus}
               onOpenConnection={openPanel}
+              onAbout={() => setView('about')}
               onSignOut={() => void signOut()}
             />
           </div>
@@ -197,7 +201,16 @@ export default function App() {
       </header>
 
       {/* In the store view everything but the store pane is hidden by CSS, so the wizard stays mounted. */}
-      <main className={view === 'store' ? 'content is-store' : 'content'}>
+      <main
+        className={view === 'wizard' ? 'content' : `content is-${view}`}
+        // Imported, so the URL carries the /contextbuilder/ base in a build.
+        style={view === 'about' ? { backgroundImage: `url(${poster})` } : undefined}
+      >
+        {view === 'about' && (
+          <div className="about-pane">
+            <AboutView onBack={() => setView('wizard')} />
+          </div>
+        )}
         {view === 'store' && (
           <div className="store-pane">
             {/* Remounted when the connection changes, so saving one reloads the store it points at. */}
