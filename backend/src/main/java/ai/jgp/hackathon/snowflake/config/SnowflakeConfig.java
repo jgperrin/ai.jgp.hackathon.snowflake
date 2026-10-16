@@ -32,6 +32,8 @@ class SnowflakeConfig {
         config.setJdbcUrl(properties.jdbcUrl());
         config.setUsername(properties.user());
         config.setPassword(properties.password());
+        // Arrow, the driver's default result format, needs --add-opens on Java 17+; JSON does not.
+        config.addDataSourceProperty("JDBC_QUERY_RESULT_FORMAT", "JSON");
         config.setMaximumPoolSize(4);
         config.setMinimumIdle(1);
         // Keep both well under Snowflake's own idle timeout so the pool retires a connection

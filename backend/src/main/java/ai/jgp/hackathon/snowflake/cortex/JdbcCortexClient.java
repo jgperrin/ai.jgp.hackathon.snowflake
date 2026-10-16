@@ -5,6 +5,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import ai.jgp.hackathon.snowflake.config.CortexProperties;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Calls Cortex over JDBC. AI_COMPLETE is the current SQL surface; the older
@@ -29,6 +31,21 @@ class JdbcCortexClient implements CortexClient {
         if (answer == null) {
             throw new IllegalStateException("Cortex returned no answer for model " + model);
         }
+        return unquote(answer);
+    }
+
+    /** AI_COMPLETE can hand back its text as a JSON string literal ("\"...\""); unwrap it once. */
+    static String unquote(String answer) {
+        String a = answer.strip();
+        if (a.length() >= 2 && a.startsWith("\"") && a.endsWith("\"")) {
+            try {
+                return JSON.readValue(a, String.class);
+            } catch (JacksonException e) {
+                return answer;
+            }
+        }
         return answer;
     }
+
+    private static final JsonMapper JSON = JsonMapper.builder().build();
 }

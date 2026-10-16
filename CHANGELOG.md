@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.1] - 2026-10-16
+
+### Fixed
+- Live queries failed on Java 21 because the Snowflake driver's Arrow result decoding needs `--add-opens`; connections now use `JDBC_QUERY_RESULT_FORMAT=JSON`, so plain `java -jar` works (DIND#19).
+- `AI_COMPLETE` answers returned as a JSON string literal are unwrapped before parsing.
+- The driver's cloud-metadata probes no longer log ERROR lines at startup.
+
 ## [0.10.0] - 2026-10-16
 
 ### Added
