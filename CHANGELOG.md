@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.35] - 2026-10-16
+
+### Changed
+- About is a window over the poster (DIND#91): drag it by its title bar
+  anywhere in the content area (clamped, so it can't be lost), and it's
+  translucent glass with a blurred backdrop, so the artwork shows through. The
+  page scrim is much lighter. Text holds WCAG AA on the glass over any
+  backdrop; reduced-transparency and no-`backdrop-filter` fall back to an
+  opaque surface. At phone width it sits in flow and does not drag.
+
 ## [0.10.34] - 2026-10-16
 
 ### Changed

@@ -41,7 +41,10 @@
   /* Roles, light. */
   --canvas: var(--gray-50);
   /* Washes the About poster (DIND#82) so the copy card stands off it. */
-  --about-scrim: rgba(255, 255, 255, 0.35);
+  --about-scrim: rgba(255, 255, 255, 0.12);
+  /* The About window (DIND#91): translucent enough to show the poster, opaque enough that body text
+     holds AA even over pure black. */
+  --about-glass: rgba(255, 255, 255, 0.78);
   --surface: #ffffff;
   --surface-2: var(--gray-100);
   --header-bg: #ffffff;
@@ -98,7 +101,8 @@
   :root:not([data-theme='light']) {
     --canvas: var(--gray-950);
     /* Washes the About poster (DIND#82) so the copy card stands off it. */
-    --about-scrim: rgba(3, 7, 18, 0.45);
+    --about-scrim: rgba(3, 7, 18, 0.2);
+    --about-glass: rgba(15, 23, 42, 0.8);
     --surface: var(--gray-900);
     --surface-2: var(--gray-800);
     --header-bg: #0c1120; /* the Dark Header Bar chrome (themes.md) */
@@ -136,7 +140,8 @@
 :root[data-theme='dark'] {
   --canvas: var(--gray-950);
   /* Washes the About poster (DIND#82) so the copy card stands off it. */
-  --about-scrim: rgba(3, 7, 18, 0.45);
+  --about-scrim: rgba(3, 7, 18, 0.2);
+  --about-glass: rgba(15, 23, 42, 0.8);
   --surface: var(--gray-900);
   --surface-2: var(--gray-800);
   --header-bg: #0c1120; /* the Dark Header Bar chrome (themes.md) */
@@ -1978,11 +1983,59 @@ input[type='radio'] {
   flex-direction: column;
   gap: 0.75rem;
   padding: 1.5rem 1.75rem;
+  /* A window over the poster (DIND#91): glass, blurred backdrop, and a tall window scrolls inside. */
+  background: var(--about-glass);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  backdrop-filter: blur(10px) saturate(1.1);
+  max-block-size: calc(100vh - 10rem);
+  overflow: auto;
+  will-change: transform;
+}
+
+/* Muted grey and accent links do not hold AA on glass; on the window everything uses text/heading. */
+.about-card .muted {
+  color: var(--text);
+}
+
+.about-card a {
+  color: var(--heading);
+  text-decoration: underline;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .about-card {
+    background: var(--surface);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .about-card {
+    background: var(--surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 .about-card h1 {
   margin: 0;
   color: var(--heading);
+}
+
+.about-handle {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.about-card.is-dragging .about-handle {
+  cursor: grabbing;
+}
+
+@media (max-width: 640px) {
+  .about-handle {
+    cursor: auto;
+    touch-action: auto;
+  }
 }
 
 .about-card p {

@@ -1,7 +1,19 @@
+import { useRef, useSyncExternalStore } from 'react'
+import { useDraggable } from '../lib/useDraggable'
+
 const REPO = 'https://github.com/jgperrin/ai.jgp.hackathon.snowflake'
 
 interface Props {
   onBack: () => void
+}
+
+/** Below this width the window sits in flow at full width and does not drag (DIND#91). */
+const PHONE = '(max-width: 640px)'
+
+function subscribe(onChange: () => void) {
+  const query = window.matchMedia(PHONE)
+  query.addEventListener('change', onChange)
+  return () => query.removeEventListener('change', onChange)
 }
 
 /**
@@ -10,9 +22,20 @@ interface Props {
  * this is only the copy, on a palette surface so it stays legible over the artwork.
  */
 export function AboutView({ onBack }: Props) {
+  const phone = useSyncExternalStore(subscribe, () => window.matchMedia(PHONE).matches)
+  const card = useRef<HTMLElement>(null)
+  const { offset, dragging, handleProps } = useDraggable(card, !phone)
   return (
-    <article className="card about-card" aria-labelledby="about-title">
-      <h1 id="about-title">About Context Builder</h1>
+    <article
+      ref={card}
+      className={dragging ? 'card about-card is-dragging' : 'card about-card'}
+      aria-labelledby="about-title"
+      style={offset.x || offset.y ? { transform: `translate(${offset.x}px, ${offset.y}px)` } : undefined}
+    >
+      {/* The title bar is the drag handle; the document order never changes, wherever the window sits. */}
+      <h1 id="about-title" className="about-handle" {...handleProps}>
+        About Context Builder
+      </h1>
       <p className="about-lede">
         Everybody wants to build a context layer for AI, but what does it look like, and how do you build and
         maintain it? Context Builder analyzes your Snowflake data and builds that layer with open standards.
