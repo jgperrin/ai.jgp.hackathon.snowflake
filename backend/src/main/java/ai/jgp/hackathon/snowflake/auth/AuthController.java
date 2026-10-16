@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 @RestController
@@ -22,9 +23,11 @@ class AuthController {
     static final String SESSION_USER = "contextbuilder.user";
 
     private final AuthProperties auth;
+    private final SignInCookie cookie;
 
-    AuthController(AuthProperties auth) {
+    AuthController(AuthProperties auth, SignInCookie cookie) {
         this.auth = auth;
+        this.cookie = cookie;
     }
 
     record Credentials(String username, String password) {
@@ -43,7 +46,8 @@ class AuthController {
     }
 
     @PostMapping("/login")
-    ResponseEntity<?> login(@RequestBody Credentials credentials, HttpServletRequest request) {
+    ResponseEntity<?> login(@RequestBody Credentials credentials, HttpServletRequest request,
+            HttpServletResponse response) {
         if (credentials == null || !matches(credentials.username(), auth.demoUser())
                 || !matches(credentials.password(), auth.demoPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Wrong username or password"));
@@ -54,11 +58,13 @@ class AuthController {
         }
         // A fresh session id on sign-in, so a session id seen before sign-in is worthless after it.
         request.getSession(true).setAttribute(SESSION_USER, auth.demoUser());
+        cookie.issue(auth.demoUser(), request, response);
         return ResponseEntity.ok(new Me(auth.demoUser()));
     }
 
     @PostMapping("/logout")
-    ResponseEntity<Void> logout(HttpServletRequest request) {
+    ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
+        cookie.clear(request, response);
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();
@@ -68,7 +74,7 @@ class AuthController {
 
     @GetMapping("/me")
     ResponseEntity<?> me(HttpServletRequest request) {
-        String user = AuthInterceptor.sessionUser(request);
+        String user = AuthInterceptor.signedInUser(request, cookie);
         return user == null
                 ? ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Sign in first"))
                 : ResponseEntity.ok(new Me(user));
