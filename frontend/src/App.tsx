@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ApiError, MOCK, api, onSessionEvent } from './api'
 import type { SessionUser } from './api'
 import { AppearanceToggle } from './components/AppearanceToggle'
@@ -32,6 +32,8 @@ export default function App() {
   const [needsSetup, setNeedsSetup] = useState(false)
   // null: panel closed; a string: open, with the reason it opened on its own ('' when the user opened it).
   const [panel, setPanel] = useState<string | null>(null)
+  // Who opened the panel, so closing it hands focus back instead of dropping it on <body> (DIND#78).
+  const opener = useRef<HTMLElement | null>(null)
   // Drives the footer heart: false only when the session check could not reach the backend at all.
   const [backendUp, setBackendUp] = useState(true)
 
@@ -88,6 +90,23 @@ export default function App() {
       live = false
     }
   }, [username])
+
+  function openPanel() {
+    const active = document.activeElement
+    opener.current = active instanceof HTMLElement && active !== document.body ? active : null
+    setPanel('')
+  }
+
+  function closePanel() {
+    setPanel(null)
+    const back = opener.current
+    opener.current = null
+    // After the panel unmounts. A menu item that opened it is gone by then; fall back to the menu button.
+    requestAnimationFrame(() => {
+      const target = back?.isConnected ? back : document.querySelector<HTMLElement>('.profile-menu > button')
+      target?.focus()
+    })
+  }
 
   async function signOut() {
     try {
@@ -147,7 +166,7 @@ export default function App() {
             <ProfileMenu
               username={user.username}
               status={connectionStatus}
-              onOpenConnection={() => setPanel('')}
+              onOpenConnection={openPanel}
               onSignOut={() => void signOut()}
             />
           </div>
@@ -165,7 +184,7 @@ export default function App() {
         </div>
 
         {connected === null && <LoadingState caption="Checking your Snowflake connection…" />}
-        {connected !== null && <ConnectionCard ready={connected} onOpen={() => setPanel('')} />}
+        {connected !== null && <ConnectionCard ready={connected} onOpen={openPanel} />}
         {/* Keyed by user so a different sign-in never sees the previous user's bundle. */}
         {connected && <Wizard key={user.username} />}
       </main>
@@ -173,7 +192,7 @@ export default function App() {
       {footer}
 
       {panel !== null && (
-        <ConnectionPanel reason={panel} onClose={() => setPanel(null)} onSaved={() => setConnected(true)} />
+        <ConnectionPanel reason={panel} onClose={closePanel} onSaved={() => setConnected(true)} />
       )}
     </div>
   )
