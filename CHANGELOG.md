@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.18] - 2026-10-16
+
+### Fixed
+- Users stay signed in across backend restarts and deploys: sign-in also sets a signed cookie (HMAC-SHA256, 12 h, HttpOnly, SameSite=Lax) that rebuilds the lost session. Key from `CONTEXTBUILDER_AUTH_SECRET`, else derived from the demo credentials. Mid-analysis "Sign in first" after a restart is gone (DIND#52).
+
 ## [0.10.17] - 2026-10-16
 
 ### Added

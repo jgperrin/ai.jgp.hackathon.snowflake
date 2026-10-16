@@ -13,9 +13,11 @@ import jakarta.servlet.http.HttpSession;
 class AuthInterceptor implements HandlerInterceptor {
 
     private final AuthProperties auth;
+    private final SignInCookie cookie;
 
-    AuthInterceptor(AuthProperties auth) {
+    AuthInterceptor(AuthProperties auth, SignInCookie cookie) {
         this.auth = auth;
+        this.cookie = cookie;
     }
 
     static String sessionUser(HttpServletRequest request) {
@@ -23,10 +25,23 @@ class AuthInterceptor implements HandlerInterceptor {
         return session == null ? null : (String) session.getAttribute(AuthController.SESSION_USER);
     }
 
+    /** The session's user; after a restart, the signed cookie's user, put back into a new session. */
+    static String signedInUser(HttpServletRequest request, SignInCookie cookie) {
+        String user = sessionUser(request);
+        if (user != null) {
+            return user;
+        }
+        user = cookie.verify(request);
+        if (user != null) {
+            request.getSession(true).setAttribute(AuthController.SESSION_USER, user);
+        }
+        return user;
+    }
+
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
             throws Exception {
-        String user = auth.required() ? sessionUser(request) : auth.demoUser();
+        String user = auth.required() ? signedInUser(request, cookie) : auth.demoUser();
         if (user == null) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);

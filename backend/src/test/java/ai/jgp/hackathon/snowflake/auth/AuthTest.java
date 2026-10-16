@@ -95,4 +95,21 @@ class AuthTest {
             UserContext.clear();
         }
     }
+
+    @Test
+    void signInSurvivesALostSession() throws Exception {
+        jakarta.servlet.http.Cookie cookie = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"username\":\"jgp\",\"password\":\"odcs\"}"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getCookie("cb_signin");
+        assertThat(cookie).isNotNull();
+        // No session at all, as after a backend restart: the cookie alone signs the user back in.
+        mockMvc.perform(get("/api/catalog/databases").cookie(cookie)).andExpect(status().isOk());
+        mockMvc.perform(get("/api/auth/me").cookie(cookie)).andExpect(jsonPath("$.username").value("jgp"));
+        mockMvc.perform(get("/api/catalog/databases").cookie(new jakarta.servlet.http.Cookie("cb_signin", "forged")))
+                .andExpect(status().isUnauthorized());
+        jakarta.servlet.http.Cookie cleared = mockMvc.perform(post("/api/auth/logout").cookie(cookie))
+                .andReturn().getResponse().getCookie("cb_signin");
+        assertThat(cleared.getMaxAge()).isZero();
+    }
 }
