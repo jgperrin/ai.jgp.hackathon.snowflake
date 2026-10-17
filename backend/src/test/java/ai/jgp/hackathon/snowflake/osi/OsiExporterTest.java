@@ -23,11 +23,12 @@ class OsiExporterTest {
         List<Map<String, Object>> contracts = new ArrayList<>();
         Finserv.SCHEMAS.forEach((schema, tables) -> contracts.add(ContractGenerator.contract("FINSERV_DW", schema,
                 tables, new ContractGenerator.Server("acct", "WH"), Instant.EPOCH)));
+        String core = ContractGenerator.artifactId(ContractGenerator.contractName("FINSERV_DW", "CORE"));
         return ProposalApplier.apply(contracts, List.of(
-                new Proposal("1", "finserv_dw-core", "CUSTOMERS", "EMAIL", "classification", "restricted", ""),
-                new Proposal("2", "finserv_dw-core", "CUSTOMERS", "EMAIL", "tag", "pii", ""),
-                new Proposal("3", "finserv_dw-core", "CUSTOMERS", "EMAIL", "businessName", "Email Address", ""),
-                new Proposal("4", "finserv_dw-core", "CUSTOMERS", null, "description", "Bank customers.", "")));
+                new Proposal("1", core, "CUSTOMERS", "EMAIL", "classification", "restricted", ""),
+                new Proposal("2", core, "CUSTOMERS", "EMAIL", "tag", "pii", ""),
+                new Proposal("3", core, "CUSTOMERS", "EMAIL", "businessName", "Email Address", ""),
+                new Proposal("4", core, "CUSTOMERS", null, "description", "Bank customers.", "")));
     }
 
     @SuppressWarnings("unchecked")
@@ -37,7 +38,7 @@ class OsiExporterTest {
         Map<String, Object> model = OsiExporter.export(ContractGenerator.product("FINSERV_DW", contracts, Instant.EPOCH),
                 contracts);
         assertThat(validator.validateOsi(model)).isEmpty();
-        assertThat(model).containsEntry("version", "0.2.0.dev0").containsEntry("name", "finserv_dw");
+        assertThat(model).containsEntry("version", "0.2.0.dev0").containsEntry("name", "finserv_dw_data_product");
         List<Map<String, Object>> datasets = (List<Map<String, Object>>) model.get("datasets");
         assertThat(datasets).hasSize(10);
         Map<String, Object> customers = datasets.get(1);

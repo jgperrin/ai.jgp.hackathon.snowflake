@@ -1,5 +1,9 @@
 package ai.jgp.hackathon.snowflake.product;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -7,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 import ai.jgp.hackathon.snowflake.catalog.CatalogModel.ColumnInfo;
 import ai.jgp.hackathon.snowflake.catalog.CatalogModel.TableInfo;
@@ -21,6 +26,16 @@ public final class ContractGenerator {
     public static final String ODPS_VERSION = "v1.1.0";
     static final String INITIAL_VERSION = "1.0.0";
 
+    /** What the documents are called, so a name says what the artifact is and not just its source. */
+    static final String PRODUCT_SUFFIX = " data product";
+    static final String CONTRACT_SUFFIX = " data contract";
+
+    /**
+     * Namespace for this app's name-based ids. A fixed UUID of our own, written once and never
+     * touched: changing it would change every id this app has ever produced.
+     */
+    private static final UUID ID_NAMESPACE = UUID.fromString("3f7c1e6a-9b2d-4c58-9a71-2e4d8b5f0c31");
+
     /** Where the data lives; written into each contract's {@code servers} block. */
     public record Server(String account, String warehouse) {
     }
@@ -33,16 +48,64 @@ public final class ContractGenerator {
         return String.join("-", parts).toLowerCase(Locale.ROOT).replaceAll("[\\s.#/\\\\@!%&^]+", "_");
     }
 
+    public static String productName(String database) {
+        return database + PRODUCT_SUFFIX;
+    }
+
+    public static String contractName(String database, String schema) {
+        return database + "." + schema + CONTRACT_SUFFIX;
+    }
+
+    /**
+     * A UUID v5 (name-based over SHA-1, RFC 4122) of the entity's own name, in this app's namespace.
+     *
+     * Deterministic on purpose: the same database or schema always yields the same id, so a product
+     * keeps its identity across regenerations, and two different names cannot collide the way
+     * slugified ones can — the old id dropped every character a Snowflake identifier may not use.
+     */
+    public static String artifactId(String name) {
+        byte[] hash = sha1(namespaceBytes(), name.getBytes(StandardCharsets.UTF_8));
+        hash[6] = (byte) ((hash[6] & 0x0f) | 0x50);
+        hash[8] = (byte) ((hash[8] & 0x3f) | 0x80);
+        return hex(hash, 0, 4) + '-' + hex(hash, 4, 2) + '-' + hex(hash, 6, 2) + '-' + hex(hash, 8, 2) + '-'
+                + hex(hash, 10, 6);
+    }
+
+    private static byte[] namespaceBytes() {
+        return ByteBuffer.allocate(16).putLong(ID_NAMESPACE.getMostSignificantBits())
+                .putLong(ID_NAMESPACE.getLeastSignificantBits()).array();
+    }
+
+    private static byte[] sha1(byte[] namespace, byte[] name) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-1");
+            digest.update(namespace);
+            return digest.digest(name);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-1 is required by RFC 4122 and unavailable", e);
+        }
+    }
+
+    private static String hex(byte[] bytes, int offset, int length) {
+        StringBuilder out = new StringBuilder(length * 2);
+        for (int i = offset; i < offset + length; i++) {
+            out.append(Character.forDigit((bytes[i] >> 4) & 0xf, 16)).append(Character.forDigit(bytes[i] & 0xf, 16));
+        }
+        return out.toString();
+    }
+
     public static Map<String, Object> contract(String database, String schema, List<TableInfo> tables,
             Server server, Instant now) {
         Map<String, Object> c = new LinkedHashMap<>();
         c.put("apiVersion", ODCS_VERSION);
         c.put("kind", "DataContract");
-        c.put("id", id(database, schema));
-        c.put("name", database + "." + schema);
+        c.put("id", artifactId(contractName(database, schema)));
+        c.put("name", contractName(database, schema));
         c.put("version", INITIAL_VERSION);
         c.put("status", "draft");
-        c.put("dataProduct", database);
+        // Deprecated in ODCS v3.1.0, and the real link is the ODPS output port's contractId; kept in
+        // step with the product's name rather than the raw database name.
+        c.put("dataProduct", productName(database));
         c.put("description", Map.of("purpose", "Data contract for the " + schema + " schema of the "
                 + database + " Snowflake database, generated from its catalog and profile."));
         Map<String, Object> srv = new LinkedHashMap<>();
@@ -98,15 +161,15 @@ public final class ContractGenerator {
         Map<String, Object> p = new LinkedHashMap<>();
         p.put("apiVersion", ODPS_VERSION);
         p.put("kind", "DataProduct");
-        p.put("id", id(database));
-        p.put("name", database);
+        p.put("id", artifactId(productName(database)));
+        p.put("name", productName(database));
         p.put("version", INITIAL_VERSION);
         p.put("status", "draft");
         p.put("description", Map.of("purpose", "Data product built from the " + database
                 + " Snowflake database. Each output port is backed by an ODCS data contract."));
         List<Map<String, Object>> ports = new ArrayList<>();
         for (Map<String, Object> contract : contracts) {
-            String schema = String.valueOf(contract.get("name")).substring(database.length() + 1);
+            String schema = schemaOf(contract);
             Map<String, Object> port = new LinkedHashMap<>();
             port.put("id", id(schema));
             port.put("name", schema.toLowerCase(Locale.ROOT));
@@ -119,5 +182,18 @@ public final class ContractGenerator {
         p.put("outputPorts", ports);
         p.put("productCreatedTs", now.truncatedTo(ChronoUnit.SECONDS).toString());
         return p;
+    }
+
+    /**
+     * The schema a contract covers, read from its server block. It used to be sliced out of the
+     * contract's name, which stopped working the moment the name became more than the source.
+     */
+    private static String schemaOf(Map<String, Object> contract) {
+        Object servers = contract.get("servers");
+        if (servers instanceof List<?> list && !list.isEmpty() && list.get(0) instanceof Map<?, ?> server
+                && server.get("schema") != null) {
+            return String.valueOf(server.get("schema"));
+        }
+        throw new IllegalArgumentException("Contract " + contract.get("id") + " has no Snowflake schema");
     }
 }

@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.42] - 2026-10-17
+
+### Changed
+- Products and contracts are named for what they are, and their ids are derived
+  from that name (DIND#110). The product is `<Database> data product` and each
+  contract is `<Database>.<Schema> data contract` — both used to be the bare
+  database name, so the store's Product and Id columns said the same thing twice.
+  Their ids are now a UUID v5 (name-based over SHA-1, RFC 4122) of that name in a
+  namespace this app owns, instead of the slugified database name: deterministic,
+  so regenerating the same database or schema yields the same id, and two
+  different names can no longer collide the way a slug can. Table, column and
+  output-port ids keep their slug form, and `servers[0].schema` is read directly
+  rather than sliced out of the contract name.
+- The OSI/Apache Ossie model is named from the product's name, not its id —
+  which is a UUID now, and no use as a model name.
+- Saves already in the lab account still open and still list: the store is keyed
+  by `SAVE_ID`, so ids are not migrated.
+
 ## [0.10.41] - 2026-10-16
 
 ### Added

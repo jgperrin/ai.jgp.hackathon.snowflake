@@ -46,7 +46,48 @@ class ContractGeneratorTest {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> ports = (List<Map<String, Object>>) product.get("outputPorts");
         assertThat(ports).hasSize(5);
-        assertThat(ports.get(2)).containsEntry("name", "insurance").containsEntry("contractId", "finserv_dw-insurance");
+        assertThat(ports.get(2)).containsEntry("name", "insurance");
+        // The port points at the contract it belongs to, and that id is a UUID v5 (DIND#110):
+        // version nibble 5, variant 8-b, and derived from the contract's own name.
+        assertThat(String.valueOf(ports.get(2).get("contractId"))).isEqualTo(String.valueOf(contracts.get(2).get("id")))
+                .matches("[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}");
+    }
+
+    @Test
+    void artifactIdsAreUuidV5OfTheName() {
+        // Known answers (cross-checked against Python's uuid.uuid5 in the same namespace). They pin
+        // the algorithm, the namespace and the name encoding: changing any of the three would
+        // reissue every id this app has ever produced, and this fails instead.
+        assertThat(ContractGenerator.artifactId("FINSERV_DW data product"))
+                .isEqualTo("f3889c50-a73f-5194-b163-5bdae1e5a1d7");
+        assertThat(ContractGenerator.artifactId("FINSERV_DW.INSURANCE data contract"))
+                .isEqualTo("92a45b25-c6fb-537b-bfbb-f2c34af21f48");
+        assertThat(ContractGenerator.artifactId("AUTO_MFG_DW.SALES data contract"))
+                .isEqualTo("794efb4c-faf9-5074-9897-1065489ec76b");
+    }
+
+    @Test
+    void namesSayWhatTheArtifactIsAndIdsAreDeterministic() {
+        assertThat(ContractGenerator.productName("HEALTHCARE_DW")).isEqualTo("HEALTHCARE_DW data product");
+        assertThat(ContractGenerator.contractName("HEALTHCARE_DW", "CLAIMS"))
+                .isEqualTo("HEALTHCARE_DW.CLAIMS data contract");
+
+        List<Map<String, Object>> contracts = allContracts();
+        Map<String, Object> product = ContractGenerator.product("FINSERV_DW", contracts, NOW);
+        assertThat(product).containsEntry("name", "FINSERV_DW data product");
+        assertThat(String.valueOf(product.get("id")))
+                .isEqualTo(ContractGenerator.artifactId("FINSERV_DW data product"));
+        assertThat(contracts.get(0)).containsEntry("name", ContractGenerator.contractName("FINSERV_DW", "CORE"))
+                .containsEntry("dataProduct", "FINSERV_DW data product");
+
+        // Deterministic: regenerating the same source yields the same ids...
+        Map<String, Object> again = ContractGenerator.product("FINSERV_DW", allContracts(), NOW);
+        assertThat(again.get("id")).isEqualTo(product.get("id"));
+        // ...and two different sources never collide, which slugified ids could not promise.
+        Map<String, Object> other = ContractGenerator.product("HEALTHCARE_DW", allContracts(), NOW);
+        assertThat(other.get("id")).isNotEqualTo(product.get("id"));
+        assertThat(ContractGenerator.artifactId("A.B data contract"))
+                .isNotEqualTo(ContractGenerator.artifactId("A.B.C data contract"));
     }
 
     @Test

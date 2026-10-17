@@ -65,7 +65,8 @@ class KeyCandidatesTest {
         Finserv.SCHEMAS.forEach((schema, tables) -> tables.forEach(t -> {
             List<ColumnProfile> cols = t.columns().stream()
                     .map(c -> col(c.name(), 0, c.primaryKey() ? 1000 : 10)).toList();
-            KeyCandidates.propose("finserv_dw-" + schema.toLowerCase(), new TableProfile(t.name(), 1000L, false, 1000,
+            KeyCandidates.propose(ContractGenerator.artifactId(
+                    ContractGenerator.contractName("FINSERV_DW", schema)), new TableProfile(t.name(), 1000L, false, 1000,
                     cols), null, ids).ifPresent(keys::add);
         }));
         List<Map<String, Object>> applied = ProposalApplier.apply(contracts, keys);

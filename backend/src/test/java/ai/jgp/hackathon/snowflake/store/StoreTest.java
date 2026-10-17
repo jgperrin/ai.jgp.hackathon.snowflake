@@ -46,7 +46,7 @@ class StoreTest {
 
         mockMvc.perform(get("/api/products"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("FINSERV_DW"));
+                .andExpect(jsonPath("$[0].name").value("FINSERV_DW data product"));
         String loaded = mockMvc.perform(get("/api/products/" + id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.validation.valid").value(true))
@@ -136,7 +136,7 @@ class StoreTest {
         assertThat(saves).extracting(s -> (String) s.get("savedAt")).isSortedAccordingTo(
                 java.util.Comparator.reverseOrder());
         Map<String, Object> mine = saves.stream().filter(s -> id.equals(s.get("saveId"))).findFirst().orElseThrow();
-        assertThat(mine.get("name")).isEqualTo("FINSERV_DW");
+        assertThat(mine.get("name")).isEqualTo("FINSERV_DW data product");
         assertThat(mine.get("version")).isEqualTo("1.0.0");
         assertThat(mine.get("savedBy")).isEqualTo("jgp");
         List<Map<String, Object>> artifacts = (List<Map<String, Object>>) mine.get("artifacts");

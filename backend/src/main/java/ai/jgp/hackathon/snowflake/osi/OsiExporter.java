@@ -10,6 +10,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import ai.jgp.hackathon.snowflake.product.ContractGenerator;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -42,7 +43,9 @@ public final class OsiExporter {
 
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("version", OSSIE_VERSION);
-        model.put("name", String.valueOf(product.getOrDefault("id", "data_product")));
+        // Slugified from the product's name, not its id: the id is a UUID since DIND#110, and a
+        // semantic model named after a UUID is no use to anyone reading the export.
+        model.put("name", ContractGenerator.id(String.valueOf(product.getOrDefault("name", "data product"))));
         if (product.get("description") instanceof Map<?, ?> d && d.get("purpose") instanceof String purpose) {
             model.put("description", purpose);
         }
