@@ -2,6 +2,21 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.44] - 2026-10-17
+
+### Added
+- A save can be deleted from the store (DIND#111): `DELETE /api/products/{saveId}` removes
+  every artifact row under that save, and the store view puts a Delete on each row behind a
+  confirmation naming the product, its version, when it was saved, who saved it and how many
+  artifacts go with it. A save is deleted whole, never one artifact of three — that would
+  leave a product whose contract is gone. An unknown or malformed id is refused and deletes
+  nothing.
+
+### Changed
+- `StoreSql`'s "creates, inserts and reads; never updates or deletes" note is replaced by the
+  rule that actually holds: a stored document is never overwritten, and a save can be deleted
+  whole because a user asked for it.
+
 ## [0.10.43] - 2026-10-17
 
 ### Fixed
