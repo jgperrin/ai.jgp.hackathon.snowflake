@@ -26,7 +26,7 @@ class SignInCookieTest {
     static String issued(SignInCookie c) {
         MockHttpServletResponse response = new MockHttpServletResponse();
         c.issue("jgp", new MockHttpServletRequest(), response);
-        Cookie cookie = response.getCookie(SignInCookie.NAME);
+        Cookie cookie = response.getCookie(SignInCookie.DEFAULT_NAME);
         assertThat(cookie.isHttpOnly()).isTrue();
         assertThat(cookie.getMaxAge()).isEqualTo(12 * 3600);
         assertThat(cookie.getAttribute("SameSite")).isEqualTo("Lax");
@@ -58,12 +58,12 @@ class SignInCookieTest {
         SignInCookie c = at(NOW, "");
         MockHttpServletRequest request = new MockHttpServletRequest();
         assertThat(c.verify(request)).isNull();
-        request.setCookies(new Cookie("other", "x"), new Cookie(SignInCookie.NAME, issued(c)));
+        request.setCookies(new Cookie("other", "x"), new Cookie(SignInCookie.DEFAULT_NAME, issued(c)));
         assertThat(c.verify(request)).isEqualTo("jgp");
         MockHttpServletResponse response = new MockHttpServletResponse();
         request.addHeader("X-Forwarded-Proto", "https");
         c.clear(request, response);
-        assertThat(response.getCookie(SignInCookie.NAME).getMaxAge()).isZero();
-        assertThat(response.getCookie(SignInCookie.NAME).getSecure()).isTrue();
+        assertThat(response.getCookie(SignInCookie.DEFAULT_NAME).getMaxAge()).isZero();
+        assertThat(response.getCookie(SignInCookie.DEFAULT_NAME).getSecure()).isTrue();
     }
 }

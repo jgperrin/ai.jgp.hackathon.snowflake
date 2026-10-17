@@ -25,15 +25,22 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class SignInCookie {
 
-    static final String NAME = "cb_signin";
+    /** The default cookie name. A second instance on the same host overrides it (DIND#106). */
+    static final String DEFAULT_NAME = "cb_signin";
     static final Duration LIFETIME = Duration.ofHours(12);
 
     private final byte[] key;
     private final Clock clock;
+    private final String name;
 
     @org.springframework.beans.factory.annotation.Autowired
-    SignInCookie(@Value("${contextbuilder.auth.secret:}") String secret, AuthProperties auth) {
-        this(secret, auth, Clock.systemUTC());
+    SignInCookie(@Value("${contextbuilder.auth.secret:}") String secret, AuthProperties auth,
+            @Value("${contextbuilder.auth.cookie-name:cb_signin}") String cookieName) {
+        this(secret, auth, cookieName, Clock.systemUTC());
+    }
+
+    SignInCookie(String secret, AuthProperties auth, Clock clock) {
+        this(secret, auth, DEFAULT_NAME, clock);
     }
 
     /**
@@ -41,11 +48,12 @@ public class SignInCookie {
      * stable across restarts. Those credentials are public on the sign-in page anyway, so a
      * forged cookie could only ever grant what anyone can already get by signing in.
      */
-    SignInCookie(String secret, AuthProperties auth, Clock clock) {
+    SignInCookie(String secret, AuthProperties auth, String cookieName, Clock clock) {
         String material = secret != null && !secret.isBlank() ? secret
                 : "contextbuilder:" + auth.demoUser() + ":" + auth.demoPassword();
         this.key = sha256(material);
         this.clock = clock;
+        this.name = cookieName;
     }
 
     public void issue(String user, HttpServletRequest request, HttpServletResponse response) {
@@ -67,7 +75,7 @@ public class SignInCookie {
             return null;
         }
         for (Cookie c : cookies) {
-            if (NAME.equals(c.getName())) {
+            if (name.equals(c.getName())) {
                 return verify(c.getValue());
             }
         }
@@ -93,7 +101,7 @@ public class SignInCookie {
     }
 
     private Cookie cookie(String value, int maxAge, HttpServletRequest request) {
-        Cookie c = new Cookie(NAME, value);
+        Cookie c = new Cookie(name, value);
         c.setHttpOnly(true);
         c.setPath("/");
         c.setMaxAge(maxAge);

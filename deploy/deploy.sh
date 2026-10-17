@@ -16,13 +16,31 @@ set -euo pipefail
 
 VERSION="${VERSION:?set VERSION to the release you are deploying, e.g. VERSION=0.10.8}"
 HOST="${HOST:-api}"
-SERVICE="${SERVICE:-contextbuilder}"
-APP_PORT="${APP_PORT:-8093}"
-PUBLIC_URL="${PUBLIC_URL:-https://tools.actianlabs.com/contextbuilder}"
+
+# Which instance. The defaults are the original deployment, unchanged; the second
+# one (DIND#106) runs as
+#
+#   SLUG=contextbuilder-vnext APP_PORT=8094 VERSION=0.10.41 ./deploy/deploy.sh
+#
+# and everything instance-shaped — the /opt directory, the static directory, the
+# systemd unit, the nginx tenant, the public URL and the frontend's Vite base —
+# is derived from SLUG. The port is the one thing that cannot be derived: the
+# allocation table lives in ~/GitHub/ops/infra/api-vm/README.md, so a
+# non-default instance has to name its port rather than inherit 8093 and fail to
+# bind.
+SLUG="${SLUG:-contextbuilder}"
+PREFIX="${PREFIX:-/${SLUG}}"
+SERVICE="${SERVICE:-${SLUG}}"
+if [ "$SLUG" = "contextbuilder" ]; then
+  APP_PORT="${APP_PORT:-8093}"
+else
+  APP_PORT="${APP_PORT:?set APP_PORT for a non-default instance, e.g. APP_PORT=8094}"
+fi
+PUBLIC_URL="${PUBLIC_URL:-https://tools.actianlabs.com${PREFIX}}"
 
 JAR="snowflake-${VERSION}.jar"
-APP_DIR="/opt/contextbuilder"
-WEB_DIR="/var/www/tools.actianlabs.com/contextbuilder"
+APP_DIR="/opt/${SLUG}"
+WEB_DIR="/var/www/tools.actianlabs.com/${SLUG}"
 TAG="v${VERSION}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -66,16 +84,18 @@ say "Building backend"
   || die "expected backend/target/${JAR} — does the pom say ${VERSION}?"
 
 say "Building frontend"
-( cd "$BUILD_DIR/frontend" && npm ci && npm run build )
+# VITE_BASE is what makes one codebase serve two prefixes; without it the bundle
+# would call back to /contextbuilder/api from whichever instance built it.
+( cd "$BUILD_DIR/frontend" && npm ci && VITE_BASE="${PREFIX}/" npm run build )
 [ -f "$BUILD_DIR/frontend/dist/index.html" ] || die "no frontend/dist/index.html after build"
 
 # The whole deploy is worthless if the bundle is not subpath-aware, and the
 # failure mode is a blank page that nothing else explains. Refuse to ship it.
-say "Verifying the bundle carries the /contextbuilder prefix"
-grep -q '/contextbuilder/assets/' "$BUILD_DIR/frontend/dist/index.html" \
-  || die "dist/index.html does not reference /contextbuilder/assets/ — the Vite base is wrong"
-grep -q '/contextbuilder/api' "$BUILD_DIR/frontend/dist/assets/"*.js \
-  || die "the bundle has no /contextbuilder/api path — API calls would hit the domain root"
+say "Verifying the bundle carries the ${PREFIX} prefix"
+grep -q "${PREFIX}/assets/" "$BUILD_DIR/frontend/dist/index.html" \
+  || die "dist/index.html does not reference ${PREFIX}/assets/ — the Vite base is wrong"
+grep -q "${PREFIX}/api" "$BUILD_DIR/frontend/dist/assets/"*.js \
+  || die "the bundle has no ${PREFIX}/api path — API calls would hit the domain root"
 
 say "Uploading backend jar"
 # Upload under a .part name and rename only once the checksum matches.
@@ -91,7 +111,7 @@ scp -q "$LOCAL_JAR" "${HOST}:${APP_DIR}/${JAR}.part" || {
   ssh "$HOST" "rm -f '${APP_DIR}/${JAR}.part'" || true
   die "jar upload failed"
 }
-ssh "$HOST" "APP_DIR='${APP_DIR}' JAR='${JAR}' WANT='${LOCAL_SHA}' bash -s" <<'REMOTE'
+ssh "$HOST" "APP_DIR='${APP_DIR}' JAR='${JAR}' SLUG='${SLUG}' WANT='${LOCAL_SHA}' bash -s" <<'REMOTE'
 set -e
 GOT=$(sha256sum "$APP_DIR/$JAR.part" | cut -d' ' -f1)
 if [ "$GOT" != "$WANT" ]; then
@@ -101,8 +121,8 @@ if [ "$GOT" != "$WANT" ]; then
 fi
 mv "$APP_DIR/$JAR.part" "$APP_DIR/$JAR"
 chmod 644 "$APP_DIR/$JAR"
-cp "$APP_DIR/$JAR" "$APP_DIR/contextbuilder.jar"
-printf '  verified %s, installed as contextbuilder.jar\n' "$(printf '%s' "$GOT" | cut -c1-16)"
+cp "$APP_DIR/$JAR" "$APP_DIR/$SLUG.jar"
+printf '  verified %s, installed as %s.jar\n' "$(printf '%s' "$GOT" | cut -c1-16)" "$SLUG"
 REMOTE
 
 say "Uploading static bundle"

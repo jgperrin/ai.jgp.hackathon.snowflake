@@ -11,9 +11,15 @@
 set -euo pipefail
 
 HOST="${HOST:-api}"
-SERVICE="${SERVICE:-contextbuilder}"
-APP_PORT="${APP_PORT:-8093}"
-APP_DIR="/opt/contextbuilder"
+# Same instance selector as deploy.sh: SLUG=contextbuilder-vnext APP_PORT=8094 ./deploy/rollback.sh 0.10.41
+SLUG="${SLUG:-contextbuilder}"
+SERVICE="${SERVICE:-${SLUG}}"
+if [ "$SLUG" = "contextbuilder" ]; then
+  APP_PORT="${APP_PORT:-8093}"
+else
+  APP_PORT="${APP_PORT:?set APP_PORT for a non-default instance, e.g. APP_PORT=8094}"
+fi
+APP_DIR="/opt/${SLUG}"
 
 TARGET="${1:-}"
 
@@ -21,7 +27,7 @@ if [ -z "$TARGET" ]; then
   printf 'Jars on the host:\n'
   ssh "$HOST" "ls -1t ${APP_DIR}/snowflake-*.jar 2>/dev/null || echo '  (none)'"
   printf '\nCurrently running: '
-  ssh "$HOST" "readlink -f ${APP_DIR}/contextbuilder.jar 2>/dev/null || echo '${APP_DIR}/contextbuilder.jar (copy, not a symlink)'"
+  ssh "$HOST" "readlink -f ${APP_DIR}/${SLUG}.jar 2>/dev/null || echo '${APP_DIR}/${SLUG}.jar (copy, not a symlink)'"
   printf '\nRe-run with a version, e.g. %s 0.10.2\n' "$(basename "$0")"
   exit 0
 fi
@@ -32,7 +38,7 @@ ssh "$HOST" "test -f '${APP_DIR}/${JAR}'" \
   || { printf '!!! %s is not on the host. Run with no argument to list what is.\n' "$JAR" >&2; exit 1; }
 
 printf '=== Switching to %s\n' "$JAR"
-ssh "$HOST" "cp '${APP_DIR}/${JAR}' '${APP_DIR}/contextbuilder.jar'"
+ssh "$HOST" "cp '${APP_DIR}/${JAR}' '${APP_DIR}/${SLUG}.jar'"
 
 printf '=== Restarting %s\n' "$SERVICE"
 ssh "$HOST" "sudo systemctl restart '${SERVICE}'"
