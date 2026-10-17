@@ -1,5 +1,6 @@
-import { useImperativeHandle, useState } from 'react'
+import { useEffect, useImperativeHandle, useState } from 'react'
 import type { Ref } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api } from './api'
 import type { Bundle, BundleYaml, GenerateRequest } from './api'
 import { AnalyzeStep } from './components/AnalyzeStep'
@@ -32,7 +33,17 @@ interface Props {
 }
 
 export function Wizard({ ref, onBrowseStore }: Props) {
-  const [step, setStep] = useState<StepKey>('source')
+  // The step is the first path segment (DIND#101): /analyze, /verify, and so on. Reading it from the
+  // URL rather than state is what makes a step linkable, reloadable and reachable with Back.
+  const navigate = useNavigate()
+  const { pathname, state } = useLocation()
+  const segment = pathname.split('/').filter(Boolean)[0]
+  const step: StepKey = STEPS.find((s) => s.key === segment)?.key ?? 'source'
+  const setStep = (key: StepKey) => void navigate(`/${key}`)
+  // Set by the redirect below, carried in the history entry rather than in state, so the note
+  // survives the replace without a second render.
+  const needsSource = (state as { needsSource?: boolean } | null)?.needsSource === true
+
   const [bundle, setBundle] = useState<Bundle | null>(null)
   // Bumped on every new or loaded bundle, so per-bundle step state (proposals, DQ runs) starts fresh.
   const [generation, setGeneration] = useState(0)
@@ -80,29 +91,63 @@ export function Wizard({ ref, onBrowseStore }: Props) {
   const index = STEPS.findIndex((s) => s.key === step)
   const nextStep = STEPS[index + 1]
 
+  // A step URL with no bundle in memory — a reload, or a link someone pasted — lands on Source and
+  // says why, rather than showing an empty step (DIND#101). The bundle lives in memory only, so a
+  // fresh load genuinely has nothing to show for /verify.
+  useEffect(() => {
+    if (bundle === null && step !== 'source') {
+      void navigate('/source', { replace: true, state: { needsSource: true } })
+    }
+  }, [bundle, step, navigate])
+
   return (
     <>
       <nav className="stepper" aria-label="Wizard steps">
-        {STEPS.map((s, i) => (
-          <button
-            key={s.key}
-            type="button"
-            className={s.key === step ? 'stepper-item is-current' : 'stepper-item'}
-            disabled={!reachable(s.key)}
-            aria-current={s.key === step ? 'step' : undefined}
-            onClick={() => setStep(s.key)}
-          >
-            <span className="stepper-num">{i + 1}</span>
-            <span className="stepper-text">
-              <span className="stepper-title">{s.title}</span>
-              <span className="stepper-blurb">{s.blurb}</span>
-            </span>
-          </button>
-        ))}
+        {STEPS.map((s, i) => {
+          const isCurrent = s.key === step
+          const className = isCurrent ? 'stepper-item is-current' : 'stepper-item'
+          const inner = (
+            <>
+              <span className="stepper-num">{i + 1}</span>
+              <span className="stepper-text">
+                <span className="stepper-title">{s.title}</span>
+                <span className="stepper-blurb">{s.blurb}</span>
+              </span>
+            </>
+          )
+          // A reachable step is a real link, so it can be middle-clicked and opened in a new tab;
+          // one that needs a product this browser does not have stays a disabled button.
+          return reachable(s.key) ? (
+            <Link key={s.key} className={className} to={`/${s.key}`} aria-current={isCurrent ? 'step' : undefined}>
+              {inner}
+            </Link>
+          ) : (
+            <button key={s.key} type="button" className={className} disabled>
+              {inner}
+            </button>
+          )
+        })}
       </nav>
 
       <div className="wizard-body">
         <ErrorBanner error={error} onDismiss={() => setError('')} />
+
+        {needsSource && (
+          <div className="banner banner-warn" role="status">
+            <strong>Start from the source</strong>
+            <span className="banner-text">
+              That step needs a generated product, and this browser does not have one — a link or a reload starts
+              fresh. Pick a database, its schemas and tables, then Generate.
+            </span>
+            <button
+              type="button"
+              className="btn-ghost btn-small"
+              onClick={() => void navigate('/source', { replace: true, state: null })}
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* Steps stay mounted (hidden) so moving around the wizard keeps selections, proposals and results. */}
         <div hidden={step !== 'source'}>
@@ -137,9 +182,9 @@ export function Wizard({ ref, onBrowseStore }: Props) {
         {bundle && step !== 'source' && nextStep && (
           <div className="actions next-step">
             <span className="spacer" />
-            <button type="button" className="btn-secondary btn-large" onClick={() => setStep(nextStep.key)}>
+            <Link className="btn-secondary btn-large" to={`/${nextStep.key}`}>
               Next: {nextStep.title} →
-            </button>
+            </Link>
           </div>
         )}
       </div>
