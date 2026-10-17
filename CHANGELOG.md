@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.37] - 2026-10-16
+
+### Changed
+- The About poster ships as WebP (DIND#93): `frontend/src/assets/about/github2.webp`,
+  encoded from the same master at 1774x887 and quality 82, is 384 KB against the
+  JPEG's 917 KB. The JPEG is dropped rather than kept as a fallback, because every
+  browser this app can run in decodes WebP — one asset, not two. `art/github2.jpg`
+  is the untouched master and is unchanged.
+
 ## [0.10.36] - 2026-10-16
 
 ### Added
