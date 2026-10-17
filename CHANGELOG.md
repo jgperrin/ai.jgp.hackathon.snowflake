@@ -2,6 +2,33 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.48] - 2026-10-17
+
+### Added
+- The RFC-0038 context blocks are filled (DIND#109). Cortex proposes one per table —
+  instructions for an AI agent, the canonical questions the table answers, and what an
+  agent must not do — reviewed like every other proposal and landing on
+  `schema[].context`. The contract's own block, the ODPS product's and each output
+  port's are then composed from the accepted table blocks: instructions joined per
+  table, statements and constraints concatenated and tagged with the table they came
+  from. Nothing accepted means no `context` key at any of the four levels, never an
+  empty block.
+- A context block is edited through its own form (instructions, a question and answer
+  list capped at four, a constraint list capped at three) in a section of its own in
+  the review, rather than as raw JSON.
+
+### Changed
+- The OSI/Apache Ossie export carries the product's context in the shape Ossie has for
+  it: its instructions appended to `ai_context.instructions` and its canonical
+  questions as `ai_context.examples`. Ossie's `AIContext` has no slot for the
+  constraints, and none is invented for it — the contracts carry them and stay the
+  source of truth.
+
+### Fixed
+- The OSI instructions read "Semantic model of the FINSERV_DW data product data
+  product": the exporter appended the noun that DIND#110 had just put into the
+  product's name. Caught by the test written for the change above.
+
 ## [0.10.47] - 2026-10-17
 
 ### Changed
