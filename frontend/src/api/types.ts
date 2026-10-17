@@ -127,6 +127,7 @@ export interface BundleYaml {
 }
 
 export type ProposalKind =
+  | 'primaryKey'
   | 'description'
   | 'businessName'
   | 'classification'
