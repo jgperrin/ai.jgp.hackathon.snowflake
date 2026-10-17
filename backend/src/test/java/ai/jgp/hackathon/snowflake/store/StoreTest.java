@@ -1,6 +1,7 @@
 package ai.jgp.hackathon.snowflake.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -33,9 +34,51 @@ class StoreTest {
 
     final JsonMapper json = JsonMapper.builder().build();
 
-    @Test
-    void saveThenLoadRoundTrips() throws Exception {
+    /** Generates and saves one bundle, and returns its save id. */
+    String saveOne() throws Exception {
         String bundle = mockMvc.perform(post("/api/products/generate").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"database\":\"FINSERV_DW\",\"schemas\":[{\"schema\":\"RISK\",\"tables\":[]}]}"))
+                .andReturn().getResponse().getContentAsString();
+        String saved = mockMvc.perform(post("/api/products/save").contentType(MediaType.APPLICATION_JSON).content(bundle))
+                .andReturn().getResponse().getContentAsString();
+        return (String) json.readValue(saved, Map.class).get("id");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void deleteRemovesEveryRowOfTheSaveAndLeavesTheOthers() throws Exception {
+        String doomed = saveOne();
+        String kept = saveOne();
+
+        // One save is its product, its contract and the OSI model: three rows.
+        mockMvc.perform(delete("/api/products/" + doomed))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.saveId").value(doomed))
+                .andExpect(jsonPath("$.rows").value(3));
+
+        String body = mockMvc.perform(get("/api/products/saves")).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        List<Map<String, Object>> saves = json.readValue(body, List.class);
+        assertThat(saves).extracting(s -> s.get("saveId")).contains(kept).doesNotContain(doomed);
+
+        // Gone for the loader as well, and deleting it again is refused rather than reported as done.
+        mockMvc.perform(get("/api/products/" + doomed)).andExpect(status().isBadRequest());
+        mockMvc.perform(delete("/api/products/" + doomed)).andExpect(status().isBadRequest());
+
+        // The other save is untouched, whole and still valid.
+        mockMvc.perform(get("/api/products/" + kept)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.validation.valid").value(true));
+        mockMvc.perform(get("/api/products/" + kept + "/artifacts")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(3));
+    }
+
+    @Test
+    void malformedSaveIdIsRefused() throws Exception {
+        mockMvc.perform(delete("/api/products/not-a-uuid")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void saveThenLoadRoundTrips() throws Exception {        String bundle = mockMvc.perform(post("/api/products/generate").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"database\":\"FINSERV_DW\",\"schemas\":[{\"schema\":\"RISK\",\"tables\":[]}]}"))
                 .andReturn().getResponse().getContentAsString();
         String saved = mockMvc.perform(post("/api/products/save").contentType(MediaType.APPLICATION_JSON).content(bundle))

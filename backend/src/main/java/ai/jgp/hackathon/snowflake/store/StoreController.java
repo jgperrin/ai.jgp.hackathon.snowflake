@@ -2,6 +2,7 @@ package ai.jgp.hackathon.snowflake.store;
 
 import java.util.List;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ai.jgp.hackathon.snowflake.product.Bundle;
 import ai.jgp.hackathon.snowflake.store.StoreModel.Artifact;
+import ai.jgp.hackathon.snowflake.store.StoreModel.DeletedSave;
 import ai.jgp.hackathon.snowflake.store.StoreModel.SaveResult;
 import ai.jgp.hackathon.snowflake.store.StoreModel.SavedSave;
 import ai.jgp.hackathon.snowflake.store.StoreModel.SavedProduct;
@@ -50,6 +52,14 @@ class StoreController {
     @GetMapping("/{id}/artifacts")
     List<Artifact> artifacts(@PathVariable String id) {
         return store.artifacts(saveId(id));
+    }
+
+    /**
+     * Deletes a save: every artifact row under it. Irreversible, so the browser asks first.
+     */
+    @DeleteMapping("/{id}")
+    DeletedSave delete(@PathVariable String id) {
+        return store.delete(saveId(id));
     }
 
     private static String saveId(String id) {

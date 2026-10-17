@@ -15,6 +15,7 @@ import ai.jgp.hackathon.snowflake.product.StandardsValidator;
 import ai.jgp.hackathon.snowflake.product.YamlWriter;
 import ai.jgp.hackathon.snowflake.store.StoreModel.Artifact;
 import ai.jgp.hackathon.snowflake.store.StoreModel.ArtifactSummary;
+import ai.jgp.hackathon.snowflake.store.StoreModel.DeletedSave;
 import ai.jgp.hackathon.snowflake.store.StoreModel.SaveResult;
 import ai.jgp.hackathon.snowflake.store.StoreModel.SavedSave;
 import ai.jgp.hackathon.snowflake.store.StoreModel.StoredRow;
@@ -76,8 +77,19 @@ public class StoreService {
         return artifacts;
     }
 
-    private static int kindRank(String kind) {
-        return switch (kind == null ? "" : kind) {
+    /**
+     * Deletes one save and every artifact row under it (DIND#111). An unknown save is the caller's
+     * mistake, exactly as loading one is, so it reads the same way.
+     */
+    public DeletedSave delete(String saveId) {
+        int rows = store.delete(saveId);
+        if (rows == 0) {
+            throw new IllegalArgumentException("No saved product " + saveId);
+        }
+        return new DeletedSave(saveId, rows);
+    }
+
+    private static int kindRank(String kind) {        return switch (kind == null ? "" : kind) {
             case "ODPS" -> 0;
             case "ODCS" -> 1;
             case "OSI" -> 2;
@@ -106,8 +118,7 @@ public class StoreService {
                 .toList();
     }
 
-    public Bundle load(String saveId) {
-        List<Artifact> artifacts = store.load(saveId);
+    public Bundle load(String saveId) {        List<Artifact> artifacts = store.load(saveId);
         Map<String, Object> product = null;
         List<Map<String, Object>> contracts = new ArrayList<>();
         for (Artifact a : artifacts) {

@@ -23,6 +23,9 @@ export function StoreView({ onOpen, onBack }: Props) {
   const [selected, setSelected] = useState<{ saveId: string; index: number } | null>(null)
   const [loadingId, setLoadingId] = useState('')
   const [error, setError] = useState('')
+  // The save whose delete is waiting on a confirmation, and the one being deleted right now.
+  const [confirming, setConfirming] = useState('')
+  const [deleting, setDeleting] = useState('')
   // True when the list could not be read, so an empty table is not mistaken for an empty store.
   const [failed, setFailed] = useState(false)
 
@@ -84,6 +87,32 @@ export function StoreView({ onOpen, onBack }: Props) {
       setError(messageOf(cause))
     } finally {
       setLoadingId('')
+    }
+  }
+
+  /** Delete one save, whole. The list is re-read from the store afterwards rather than patched by hand. */
+  async function remove(saveId: string) {
+    setDeleting(saveId)
+    setError('')
+    try {
+      await api.deleteSave(saveId)
+      setConfirming('')
+      setArtifacts((all) => {
+        const rest = { ...all }
+        delete rest[saveId]
+        return rest
+      })
+      if (expanded === saveId) {
+        setExpanded('')
+      }
+      if (selected?.saveId === saveId) {
+        setSelected(null)
+      }
+      await load()
+    } catch (cause) {
+      setError(messageOf(cause))
+    } finally {
+      setDeleting('')
     }
   }
 
@@ -172,8 +201,47 @@ export function StoreView({ onOpen, onBack }: Props) {
                           >
                             {loadingId === s.saveId ? <Spinner /> : 'Open'}
                           </button>
+                          <button
+                            type="button"
+                            className="btn-danger btn-small"
+                            disabled={deleting !== ''}
+                            onClick={() => setConfirming(confirming === s.saveId ? '' : s.saveId)}
+                          >
+                            Delete
+                          </button>
                         </td>
                       </tr>
+                      {confirming === s.saveId && (
+                        <tr className="store-confirm">
+                          <td />
+                          <td colSpan={7}>
+                            <div className="store-confirm-inner">
+                              <span className="store-confirm-text">
+                                Delete <strong>{s.name ?? 'this save'}</strong> v{s.version ?? '—'}, saved{' '}
+                                {new Date(s.savedAt).toLocaleString()} by {s.savedBy ?? '—'}? Its {s.artifacts.length}{' '}
+                                artifact{s.artifacts.length === 1 ? '' : 's'} go with it, and this cannot be undone.
+                              </span>
+                              <span className="spacer" />
+                              <button
+                                type="button"
+                                className="btn-danger btn-small"
+                                disabled={deleting !== ''}
+                                onClick={() => void remove(s.saveId)}
+                              >
+                                {deleting === s.saveId ? <Spinner /> : 'Delete for good'}
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-ghost btn-small"
+                                disabled={deleting !== ''}
+                                onClick={() => setConfirming('')}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
                       {isOpen && (
                         <tr className="store-artifacts">
                           <td />

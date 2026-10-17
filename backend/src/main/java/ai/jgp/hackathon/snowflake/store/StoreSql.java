@@ -2,7 +2,7 @@ package ai.jgp.hackathon.snowflake.store;
 
 import ai.jgp.hackathon.snowflake.catalog.Identifiers;
 
-/** DDL and DML for the artifacts table. Creates, inserts and reads; never updates or deletes. */
+/** DDL and DML for the artifacts table. Inserts and reads, and deletes a whole save (DIND#111). */
 final class StoreSql {
 
     static final String SCHEMA = "DATA_PRODUCTS";
@@ -57,5 +57,14 @@ final class StoreSql {
     static String load(String database) {
         return "SELECT ARTIFACT_ID, KIND, NAME, VERSION, STATUS, YAML, TO_JSON(DOC) AS DOC FROM " + table(database)
                 + " WHERE SAVE_ID = ? ORDER BY CASE KIND WHEN 'ODPS' THEN 0 WHEN 'ODCS' THEN 1 ELSE 2 END, ARTIFACT_ID";
+    }
+
+    /**
+     * One save's rows, all of them. A save is the unit the store, the loader and the wizard work in,
+     * so a single artifact is never deleted on its own — that would leave a product without its
+     * contract (DIND#111).
+     */
+    static String delete(String database) {
+        return "DELETE FROM " + table(database) + " WHERE SAVE_ID = ?";
     }
 }

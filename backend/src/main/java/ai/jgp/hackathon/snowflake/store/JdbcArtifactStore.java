@@ -86,4 +86,10 @@ class JdbcArtifactStore implements ArtifactStore {
                 rs.getString("KIND"), rs.getString("NAME"), rs.getString("VERSION"), rs.getString("STATUS"),
                 rs.getString("YAML"), rs.getString("DOC")), saveId);
     }
+
+    @Override
+    public int delete(String saveId) {
+        String database = ensureTable();
+        return jdbc.update(StoreSql.delete(database), saveId);
+    }
 }

@@ -81,5 +81,6 @@ export const api: Api = {
   getProduct: (id) => guarded(async () => (await impl()).getProduct(id)),
   listSaves: () => guarded(async () => (await impl()).listSaves()),
   getSaveArtifacts: (id) => guarded(async () => (await impl()).getSaveArtifacts(id)),
+  deleteSave: (id) => guarded(async () => (await impl()).deleteSave(id)),
   exportOsi: (bundle) => guarded(async () => (await impl()).exportOsi(bundle)),
 }

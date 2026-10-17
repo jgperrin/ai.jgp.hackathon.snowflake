@@ -285,5 +285,13 @@ export interface Api {
   listSaves(): Promise<SavedSave[]>
   /** One save's artifacts as stored, product first. */
   getSaveArtifacts(id: string): Promise<SavedArtifact[]>
+  /** Deletes a save and every artifact row under it. Irreversible. */
+  deleteSave(id: string): Promise<DeletedSave>
   exportOsi(bundle: Bundle): Promise<OsiExport>
+}
+
+/** What a delete removed: the save, and how many artifact rows went with it. */
+export interface DeletedSave {
+  saveId: string
+  rows: number
 }

@@ -1267,6 +1267,23 @@ button:disabled {
   outline-offset: 1px;
 }
 
+/* Delete is irreversible, so the confirmation says what goes and offers a way out. */
+.store-confirm td {
+  background: var(--danger-bg);
+}
+
+.store-confirm-inner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+}
+
+.store-confirm-text {
+  color: var(--danger);
+}
+
 .contract-group {
   display: flex;
   flex-direction: column;

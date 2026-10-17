@@ -15,6 +15,10 @@ public final class StoreModel {
     public record SaveResult(String id, String version, String savedAt) {
     }
 
+    /** What a delete removed: the save and how many artifact rows went with it. */
+    public record DeletedSave(String saveId, int rows) {
+    }
+
     public record SavedProduct(String id, String name, String version, String savedAt) {
     }
 
