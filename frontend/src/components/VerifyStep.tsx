@@ -5,8 +5,23 @@ import { messageOf } from '../lib/util'
 import { useElapsed } from '../lib/useElapsed'
 import { ErrorBanner, Spinner } from './common'
 
+/**
+ * Why there is nothing to run. The contracts hold no rule in both cases, but the reason is
+ * different and only one of them is the user's to act on: accepted proposals that were never
+ * applied are the common one (DIND#105).
+ */
+function nothingToRun(pendingAccepted: number): string {
+  if (pendingAccepted === 1) {
+    return ' Nothing has reached a contract yet: 1 accepted proposal is waiting in Analyze. Press Apply there, then come back to this step.'
+  }
+  if (pendingAccepted > 1) {
+    return ` Nothing has reached a contract yet: ${pendingAccepted} accepted proposals are waiting in Analyze. Press Apply there, then come back to this step.`
+  }
+  return ' Nothing has been accepted in Analyze yet: accept the DQ rules you want, apply them, then run this.'
+}
+
 /** Step 4: execute every DQ rule in the contracts against Snowflake and show the evidence. */
-export function VerifyStep({ bundle }: { bundle: Bundle }) {
+export function VerifyStep({ bundle, pendingAccepted = 0 }: { bundle: Bundle; pendingAccepted?: number }) {
   const [run, setRun] = useState<QualityRun | null>(null)
   const [startedAt, setStartedAt] = useState<number | null>(null)
   const [error, setError] = useState('')
@@ -42,7 +57,7 @@ export function VerifyStep({ bundle }: { bundle: Bundle }) {
           <h2>Verify data quality</h2>
           <p className="muted">
             Runs the {ruleCount} quality rule{ruleCount === 1 ? '' : 's'} declared in the contracts as SQL on Snowflake.
-            {ruleCount === 0 && ' Accept some DQ rules in Analyze first.'}
+            {ruleCount === 0 && nothingToRun(pendingAccepted)}
           </p>
         </div>
         <button type="button" className="btn-primary btn-large" disabled={startedAt !== null} onClick={() => void execute()}>
