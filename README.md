@@ -1,5 +1,7 @@
 # Context Builder
 
+▶ [Watch the demo: Creating the context layer using ODCS and ODPS](https://youtu.be/Rg0gxIELAkU)
+
 ![Context Builder: analyzes your data and builds a context layer for AI with open standards](art/intro-github.png)
 
 Everybody wants to build a context layer for AI, but what does it look like, and how do you build and maintain it? Context Builder analyzes your Snowflake data and builds it using open standards.
