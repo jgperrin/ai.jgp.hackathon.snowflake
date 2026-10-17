@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.47] - 2026-10-17
+
+### Changed
+- A DQ rule or an SLA opens in a form instead of a JSON textarea (DIND#104). The
+  form covers what the backend accepts: for a library rule the metric, the
+  operator and its threshold (a low and a high for the between ones), the
+  valid-values list or pattern an `invalidValues` rule needs, and the description,
+  dimension, severity and unit; for a SQL rule the query, checked to be one
+  read-only SELECT before it is sent; for an SLA the property as a list, its
+  value, unit, element and description. An incomplete rule is refused with the
+  reason rather than an "Invalid JSON" line, and the raw JSON editor stays one
+  click away for the ODCS fields the form does not cover.
+
+### Note
+- The form model lives in `frontend/src/lib/ruleForm.ts`, and `QualityRulesTest`
+  pins every shape it can emit, so the form cannot produce a rule the backend
+  then drops.
+
 ## [0.10.46] - 2026-10-17
 
 ### Added
