@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.38] - 2026-10-16
+
+### Added
+- The demo video is the first thing on the README, on the line under the title
+  (DIND#97): "Watch the demo: Creating the context layer using ODCS and ODPS",
+  linking to https://youtu.be/Rg0gxIELAkU. The link text is the video's own title.
+
+### Note
+- No artifact change: documentation only.
+
 ## [0.10.37] - 2026-10-16
 
 ### Changed
