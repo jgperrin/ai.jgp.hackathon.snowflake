@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.45] - 2026-10-17
+
+### Fixed
+- The README and `InMemoryArtifactStore` still described the store as append-only
+  (DIND#111): "append-only" in the architecture diagram, "storage never updates or
+  deletes" under *Safe by construction*, and "same append-only behaviour" on the
+  offline stand-in. A stored document is never overwritten, which is the property
+  worth stating, and a save can be deleted whole.
+
+### Note
+- No artifact change: documentation and one comment.
+
 ## [0.10.44] - 2026-10-17
 
 ### Added
