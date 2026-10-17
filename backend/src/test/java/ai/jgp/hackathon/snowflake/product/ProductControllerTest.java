@@ -27,6 +27,10 @@ class ProductControllerTest {
               {"schema":"INSURANCE","tables":["CLAIMS"]},
               {"schema":"CORE","tables":[]}]}""";
 
+    /** The contract id is a deterministic UUID v5 of the contract's name (DIND#110). */
+    static final String INSURANCE_CONTRACT_ID =
+            ContractGenerator.artifactId(ContractGenerator.contractName("FINSERV_DW", "INSURANCE"));
+
     @Test
     void generatesValidBundle() throws Exception {
         mockMvc.perform(post("/api/products/generate").contentType(MediaType.APPLICATION_JSON).content(SELECTION))
@@ -35,7 +39,7 @@ class ProductControllerTest {
                 .andExpect(jsonPath("$.contracts.length()").value(2))
                 .andExpect(jsonPath("$.contracts[0].schema.length()").value(1))
                 .andExpect(jsonPath("$.contracts[1].schema.length()").value(3))
-                .andExpect(jsonPath("$.product.outputPorts[0].contractId").value("finserv_dw-insurance"));
+                .andExpect(jsonPath("$.product.outputPorts[0].contractId").value(INSURANCE_CONTRACT_ID));
     }
 
     @Test
@@ -46,7 +50,7 @@ class ProductControllerTest {
                         .content(generated.getResponse().getContentAsString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.product").value(org.hamcrest.Matchers.containsString("kind: DataProduct")))
-                .andExpect(jsonPath("$.contracts['finserv_dw-insurance']")
+                .andExpect(jsonPath("$.contracts['" + INSURANCE_CONTRACT_ID + "']")
                         .value(org.hamcrest.Matchers.containsString("apiVersion: v3.2.0")));
     }
 

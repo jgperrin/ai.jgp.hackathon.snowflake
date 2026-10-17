@@ -65,8 +65,16 @@ class EnrichControllerTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void unknownTargetIsBadRequest() throws Exception {
-        String request = "{\"bundle\":" + bundle() + ",\"accepted\":[{\"id\":\"p1\",\"contractId\":\"finserv_dw-insurance\","
+        // The contract id comes from the generated bundle, not a literal: it is a UUID v5 since
+        // DIND#110, and a stale literal would make this pass for the wrong reason (unknown
+        // contract instead of unknown table).
+        String bundle = bundle();
+        Map<String, Object> parsed = json.readValue(bundle, Map.class);
+        List<Map<String, Object>> contracts = (List<Map<String, Object>>) parsed.get("contracts");
+        String contractId = String.valueOf(contracts.get(0).get("id"));
+        String request = "{\"bundle\":" + bundle + ",\"accepted\":[{\"id\":\"p1\",\"contractId\":\"" + contractId + "\","
                 + "\"table\":\"NOPE\",\"column\":null,\"kind\":\"description\",\"value\":\"x\",\"rationale\":\"\"}]}";
         mockMvc.perform(post("/api/products/apply").contentType(MediaType.APPLICATION_JSON).content(request))
                 .andExpect(status().isBadRequest());
