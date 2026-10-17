@@ -62,12 +62,12 @@ React (Vite) ──/contextbuilder/api──▶ Spring Boot 4 (Java 21) ──JD
                                         ├─ profile      sampled aggregate SQL
                                         ├─ enrich       AI_COMPLETE, one call per table, 4 in parallel
                                         ├─ quality      ODCS rules compiled to read-only SQL
-                                        ├─ store        <db>.DATA_PRODUCTS.ARTIFACTS (YAML + VARIANT, append-only)
+                                        ├─ store        <db>.DATA_PRODUCTS.ARTIFACTS (YAML + VARIANT, one row per artifact)
                                         └─ osi          OSI/Apache Ossie export
 ```
 
 - **Per-user Snowflake connections.** Users sign in, then set their Snowflake account, user, password, warehouse, role and save database in their profile. Each user gets their own small connection pool; the password is write-only and never returned or logged.
-- **Safe by construction.** Object names are validated and quoted; profiling is sampled and bounded; SQL quality rules must be a single read-only `SELECT`; storage never updates or deletes.
+- **Safe by construction.** Object names are validated and quoted; profiling is sampled and bounded; SQL quality rules must be a single read-only `SELECT`; a stored document is never overwritten, and a save can only be deleted whole, by an explicit confirmation.
 - **Defensive AI.** Cortex answers are parsed leniently, retried once if malformed, reduced to valid ODCS, and dropped if they reference columns that do not exist.
 
 ## Run it locally

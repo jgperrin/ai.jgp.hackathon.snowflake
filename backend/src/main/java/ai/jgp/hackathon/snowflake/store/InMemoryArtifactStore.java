@@ -18,7 +18,7 @@ import ai.jgp.hackathon.snowflake.store.StoreModel.ArtifactSummary;
 import ai.jgp.hackathon.snowflake.store.StoreModel.SavedProduct;
 import ai.jgp.hackathon.snowflake.store.StoreModel.StoredRow;
 
-/** Offline stand-in for the Snowflake table; same append-only behaviour, lost on restart. */
+/** Offline stand-in for the Snowflake table; same behaviour, lost on restart. */
 @Component
 @Profile("local")
 class InMemoryArtifactStore implements ArtifactStore {
