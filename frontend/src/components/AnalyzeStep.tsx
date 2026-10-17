@@ -69,6 +69,8 @@ export function AnalyzeStep({ bundle, onApplied, onViewDocuments }: Props) {
   const [applying, setApplying] = useState(false)
   const [appliedCount, setAppliedCount] = useState(0)
   const [error, setError] = useState('')
+  // The categories the review is narrowed to, by kind. Empty means all of them, which is the default.
+  const [only, setOnly] = useState<Set<string>>(new Set())
   const elapsed = useElapsed(startedAt)
 
   const tableCount = bundle.contracts.reduce((n, c) => n + c.schema.length, 0)
@@ -81,6 +83,8 @@ export function AnalyzeStep({ bundle, onApplied, onViewDocuments }: Props) {
       const response = await api.enrich(bundle)
       setProposals(response.proposals)
       setWarnings(response.warnings ?? [])
+      // A re-analysis is a new set of proposals, so the old filter would hide the wrong things.
+      setOnly(new Set())
       setDecisions(
         Object.fromEntries(response.proposals.map((p) => [p.id, { status: 'pending', value: p.value, edited: false }])),
       )
@@ -105,6 +109,18 @@ export function AnalyzeStep({ bundle, onApplied, onViewDocuments }: Props) {
 
   function saveEdit(id: string, value: unknown) {
     setDecisions((prev) => ({ ...prev, [id]: { status: 'accepted', value, edited: true } }))
+  }
+
+  function toggleKind(kind: string) {
+    setOnly((prev) => {
+      const next = new Set(prev)
+      if (next.has(kind)) {
+        next.delete(kind)
+      } else {
+        next.add(kind)
+      }
+      return next
+    })
   }
 
   const accepted = (proposals ?? []).filter((p) => decisions[p.id]?.status === 'accepted')
@@ -136,6 +152,11 @@ export function AnalyzeStep({ bundle, onApplied, onViewDocuments }: Props) {
     groups.set(p.contractId, byTable)
   }
   const contractName = (id: string) => bundle.contracts.find((c) => c.id === id)?.name ?? id
+
+  // Only the categories actually proposed, in the same order the sections are drawn in.
+  const presentKinds = sectionsOf(proposals ?? []).map((section) => section.kind)
+  const kindCount = (kind: string) => (proposals ?? []).filter((p) => p.kind === kind).length
+  const shown = (proposal: Proposal) => only.size === 0 || only.has(proposal.kind)
 
   return (
     <section className="step">
@@ -195,6 +216,34 @@ export function AnalyzeStep({ bundle, onApplied, onViewDocuments }: Props) {
         </div>
       )}
 
+      {proposals && proposals.length > 0 && (
+        <div className="filter-bar card">
+          <span className="filter-label">Filter</span>
+          <button
+            type="button"
+            className={only.size === 0 ? 'filter-pill is-on' : 'filter-pill'}
+            aria-pressed={only.size === 0}
+            onClick={() => setOnly(new Set())}
+          >
+            All categories
+          </button>
+          {presentKinds.map((kind) => {
+            const on = only.has(kind)
+            return (
+              <button
+                key={kind}
+                type="button"
+                className={on ? 'filter-pill is-on' : 'filter-pill'}
+                aria-pressed={on}
+                onClick={() => toggleKind(kind)}
+              >
+                {KIND_LABEL[kind as ProposalKind] ?? kind} <span className="muted">{kindCount(kind)}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
       {appliedCount > 0 && !applying && (
         <div className="banner banner-ok" role="status">
           <span className="badge badge-ok">✓ Applied</span>
@@ -213,12 +262,19 @@ export function AnalyzeStep({ bundle, onApplied, onViewDocuments }: Props) {
             <span className="tab-kind">ODCS</span> {contractName(contractId)}
           </h2>
           {[...byTable].map(([tableName, items]) => {
+            // The filter narrows what is drawn, never what a decision means: the per-table buttons
+            // still cover the whole table, and Apply still sends exactly the accepted set.
+            const visible = items.filter(shown)
             const open = items.filter((p) => decisions[p.id]?.status !== 'applied').map((p) => p.id)
             return (
               <div key={tableName} className="table-group card">
                 <div className="table-group-head">
                   <h3 className="mono">{tableName}</h3>
-                  <span className="muted">{items.length} proposals</span>
+                  <span className="muted">
+                    {visible.length === items.length
+                      ? `${items.length} proposals`
+                      : `${visible.length} of ${items.length} shown`}
+                  </span>
                   <span className="spacer" />
                   <button type="button" className="btn-ok btn-small" disabled={open.length === 0} onClick={() => decide(open, 'accepted')}>
                     Accept all for this table
@@ -227,7 +283,7 @@ export function AnalyzeStep({ bundle, onApplied, onViewDocuments }: Props) {
                     Reject all
                   </button>
                 </div>
-                {sectionsOf(items).map((section) => {
+                {sectionsOf(visible).map((section) => {
                   const pending = section.items
                     .filter((p) => decisions[p.id]?.status !== 'applied')
                     .map((p) => p.id)

@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.40] - 2026-10-16
+
+### Added
+- A category filter over the Cortex review (DIND#103): pills above the review,
+  one per category actually proposed and carrying its count, plus "All
+  categories". Picking one narrows the review to the categories picked, which is
+  how a 56-card table becomes readable. The filter changes what is drawn and
+  nothing else — the decisions, the counts in the review bar and what Apply sends
+  are identical with and without it, and the per-table Accept all still covers the
+  whole table while showing "12 of 56 shown" so it is clear what is hidden. A
+  re-analysis clears the filter.
+
 ## [0.10.39] - 2026-10-16
 
 ### Changed
