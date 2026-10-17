@@ -1,0 +1,37 @@
+# systemd unit for the SECOND Context Builder instance, served at
+# https://tools.actianlabs.com/contextbuilder-vnext (DIND#106).
+#
+# A copy of contextbuilder.service with the instance-shaped names changed:
+# a separate /opt directory, jar, unit name and port, so the two instances
+# cannot touch each other's files or ports. The frontend is static and lives at
+# /var/www/tools.actianlabs.com/contextbuilder-vnext.
+#
+# Port 8094: 8093 is the original instance, 8080 Bitol svc, 8083 bitol-mcp,
+# 8086/8087 next, 8088 controlcenter, 8089 schema-drift-advisor, 8090
+# dpcompare, 8091/8092 the CRM, 8100 the dpcompare embedding sidecar.
+# Enumerated in infra/api-vm/README.md — check that table before moving this.
+# 8094 is inside the existing `8080:8100/tcp from 10.0.0.0/8` ufw rule, so no
+# firewall change is needed.
+#
+# /opt/contextbuilder-vnext/.env holds the runtime config. It sets its own
+# SERVER_PORT, its own AUTH_COOKIE_NAME (cbnext_signin) so the two instances'
+# sessions do not clobber each other, and its own AUTH_SECRET.
+
+[Unit]
+Description=Context Builder vnext (tools.actianlabs.com/contextbuilder-vnext)
+After=network.target
+
+[Service]
+Type=simple
+User=jgp
+WorkingDirectory=/opt/contextbuilder-vnext
+EnvironmentFile=-/opt/contextbuilder-vnext/.env
+ExecStart=/usr/bin/java -jar /opt/contextbuilder-vnext/contextbuilder-vnext.jar
+Restart=on-failure
+RestartSec=10
+# Spring Boot exits 143 on SIGTERM; without this every deploy restart and
+# every `systemctl stop` is recorded as a failure.
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target

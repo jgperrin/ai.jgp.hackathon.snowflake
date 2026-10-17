@@ -28,7 +28,13 @@ snowflake:
 # In-app Help panel (POST /api/self-report) files GitHub issues in this repo.
 # No token: the app still starts and the endpoint answers 503 not_configured.
 # The token needs issues: write, plus contents: write for attachments on the branch below.
+# Two instances run on the api VM (DIND#106), so the instance-shaped settings are
+# environment, not constants: the sign-in cookie's name in particular, because two
+# instances on one host sharing it would sign each other's users out.
 contextbuilder:
+  auth:
+    # Must differ per instance; the default is the original deployment's.
+    cookie-name: ${AUTH_COOKIE_NAME:cb_signin}
   self-report:
     github:
       token: ${GITHUB_SELF_REPORT_TOKEN:}

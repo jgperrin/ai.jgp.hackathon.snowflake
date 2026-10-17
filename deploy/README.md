@@ -12,6 +12,32 @@ separately checkable so a failure tells you where it happened.
 | Frontend | `/var/www/tools.actianlabs.com/contextbuilder/` (www-data) |
 | Config | `/opt/contextbuilder/.env`, `jgp:jgp` mode 0600 |
 
+## Two instances
+
+Since 2026-10-16 there are two, and `deploy.sh` knows about both. The second one
+serves the post-hackathon work; the first stays as the hackathon submission.
+
+| | v1 | vnext |
+|---|---|---|
+| Public URL | `https://tools.actianlabs.com/contextbuilder/` | `https://tools.actianlabs.com/contextbuilder-vnext/` |
+| Backend | `/opt/contextbuilder/contextbuilder.jar`, unit `contextbuilder`, `:8093` | `/opt/contextbuilder-vnext/contextbuilder-vnext.jar`, unit `contextbuilder-vnext`, `:8094` |
+| Frontend | `/var/www/tools.actianlabs.com/contextbuilder/` | `/var/www/tools.actianlabs.com/contextbuilder-vnext/` |
+| Config | `/opt/contextbuilder/.env` | `/opt/contextbuilder-vnext/.env` |
+| Vite base | `/contextbuilder/` (the default) | `VITE_BASE=/contextbuilder-vnext/` |
+| Sign-in cookie | `cb_signin` | `cbnext_signin` — **must differ**, or the two instances sign each other's users out |
+
+Deploy the second one with its slug and port named explicitly:
+
+```bash
+SLUG=contextbuilder-vnext APP_PORT=8094 VERSION=<x.y.z> ./deploy/deploy.sh
+```
+
+`deploy.sh` derives the `/opt` directory, the static directory, the unit name,
+the public URL and the frontend's `VITE_BASE` from `SLUG`, and refuses to run a
+non-default slug without a port rather than inheriting 8093 and failing to bind.
+Rollback takes the same two variables: `SLUG=contextbuilder-vnext APP_PORT=8094 ./deploy/rollback.sh <x.y.z>`.
+
+
 ## The deploying rule — read this first
 
 **Standing instruction (JGP, 2026-10-16): keep the deployment on the newest
