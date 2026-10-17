@@ -41,7 +41,7 @@ contextbuilder:
       api-base: https://api.github.com
       web-base: https://github.com
       repo-owner: jgperrin
-      repo-name: ai.jgp.hackathon.snowflake
+      repo-name: ai.jgp.snowflakecontextbuilder
       branch: used-for-self-reports-do-not-delete
       labels: self-report
     rate-limit:

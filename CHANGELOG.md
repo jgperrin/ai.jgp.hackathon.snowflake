@@ -2,6 +2,21 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.49] - 2026-10-17
+
+### Changed
+- The repository is renamed to `ai.jgp.snowflakecontextbuilder` (DIND#108), and every
+  reference inside it follows: the Help panel's self-report target
+  (`contextbuilder.self-report.github.repo-name`, which would otherwise have gone on
+  filing against a stale name), the About view's link and the slug it prints, the
+  README, the Devpost story's links, the nginx comments and the self-report test
+  fixtures. GitHub redirects the old paths, so existing clones, links and the Devpost
+  submission keep working.
+- Two things deliberately did **not** change: the Java package
+  `ai.jgp.hackathon.snowflake`, which is a code namespace rather than the repository's
+  name, and the on-disk directory names of local clones and worktrees, which other
+  sessions' scripts and notes are built on.
+
 ## [0.10.48] - 2026-10-17
 
 ### Added

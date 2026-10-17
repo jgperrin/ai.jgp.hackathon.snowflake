@@ -1,7 +1,7 @@
 import { useRef, useSyncExternalStore } from 'react'
 import { useDraggable } from '../lib/useDraggable'
 
-const REPO = 'https://github.com/jgperrin/ai.jgp.hackathon.snowflake'
+const REPO = 'https://github.com/jgperrin/ai.jgp.snowflakecontextbuilder'
 
 interface Props {
   onBack: () => void
@@ -57,7 +57,7 @@ export function AboutView({ onBack }: Props) {
       <p>
         Source code:{' '}
         <a href={REPO} target="_blank" rel="noreferrer">
-          github.com/jgperrin/ai.jgp.hackathon.snowflake
+          github.com/jgperrin/ai.jgp.snowflakecontextbuilder
         </a>
       </p>
       <p className="muted about-disclaimer">

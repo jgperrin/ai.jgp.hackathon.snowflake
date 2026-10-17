@@ -44,7 +44,7 @@ class SelfReportServiceTest {
 
     GitHubIssueClient client(String token) {
         return new GitHubIssueClient(token, stub.apiBase(), "https://github.com", "jgperrin",
-                "ai.jgp.hackathon.snowflake", "used-for-self-reports-do-not-delete", 0);
+                "ai.jgp.snowflakecontextbuilder", "used-for-self-reports-do-not-delete", 0);
     }
 
     static SelfReportService.SubmitInput input(String description, String context, List<MultipartFile> files) {
@@ -69,9 +69,9 @@ class SelfReportServiceTest {
         assertThat(result.issueUrl()).isEqualTo(StubGitHub.ISSUE_URL);
         assertThat(result.reportId()).hasSize(8);
         String sent = stub.all();
-        assertThat(sent).contains("PUT /repos/jgperrin/ai.jgp.hackathon.snowflake/contents/" + result.reportId()
+        assertThat(sent).contains("PUT /repos/jgperrin/ai.jgp.snowflakecontextbuilder/contents/" + result.reportId()
                 + "/shot.png");
-        assertThat(sent).contains("POST /repos/jgperrin/ai.jgp.hackathon.snowflake/issues");
+        assertThat(sent).contains("POST /repos/jgperrin/ai.jgp.snowflakecontextbuilder/issues");
         assertThat(sent).contains("[Self-report] It broke on analyze").contains("\"labels\":[\"self-report\"]");
         // The body stands on its own: version, step, route, user, connection flag, recent errors.
         assertThat(sent).contains("0.10.19").contains("analyze").contains("/contextbuilder/")

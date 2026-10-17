@@ -17,7 +17,7 @@ Everybody wants to build a context layer for AI, but what does it look like, and
 
 ODCS and ODPS are the source of truth; the OSI/Apache Ossie model is derived from them, one way.
 
-_Built for the Data in the D hackathon. Repository: `ai.jgp.hackathon.snowflake`, project code DIND._
+_Built for the Data in the D hackathon. Repository: `ai.jgp.snowflakecontextbuilder`, project code DIND._
 
 ## Try it
 

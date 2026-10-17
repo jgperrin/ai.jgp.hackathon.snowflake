@@ -50,7 +50,7 @@ class SelfReportControllerTest {
 
     MockMvc against(String token, int perHour) {
         GitHubIssueClient client = new GitHubIssueClient(token, stub.apiBase(), "https://github.com", "jgperrin",
-                "ai.jgp.hackathon.snowflake", "used-for-self-reports-do-not-delete", 0);
+                "ai.jgp.snowflakecontextbuilder", "used-for-self-reports-do-not-delete", 0);
         return MockMvcBuilders.standaloneSetup(new SelfReportController(
                 new SelfReportService(client, "self-report"), new SelfReportRateLimiter(perHour))).build();
     }
