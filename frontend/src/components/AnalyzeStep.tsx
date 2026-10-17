@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api } from '../api'
 import type { Bundle, Proposal, ProposalKind } from '../api'
 import { messageOf } from '../lib/util'
@@ -18,6 +18,8 @@ interface Props {
   bundle: Bundle
   onApplied: (bundle: Bundle) => Promise<void>
   onViewDocuments: () => void
+  /** Accepted-but-unapplied count, so Verify can tell that case from "nothing accepted" (DIND#105). */
+  onPending?: (count: number) => void
 }
 
 const KIND_LABEL: Record<ProposalKind, string> = {
@@ -61,7 +63,7 @@ function sectionsOf(items: Proposal[]): Section[] {
 const isText = (kind: ProposalKind) => kind !== 'qualityRule' && kind !== 'sla'
 
 /** Step 3: Cortex proposes, the human decides. Only explicitly accepted proposals are ever sent to /apply. */
-export function AnalyzeStep({ bundle, onApplied, onViewDocuments }: Props) {
+export function AnalyzeStep({ bundle, onApplied, onViewDocuments, onPending }: Props) {
   const [proposals, setProposals] = useState<Proposal[] | null>(null)
   const [warnings, setWarnings] = useState<string[]>([])
   const [decisions, setDecisions] = useState<Record<string, Decision>>({})
@@ -143,6 +145,11 @@ export function AnalyzeStep({ bundle, onApplied, onViewDocuments }: Props) {
 
   const counts = { pending: 0, accepted: 0, rejected: 0, applied: 0 }
   for (const d of Object.values(decisions)) counts[d.status] += 1
+
+  const acceptedNotApplied = counts.accepted
+  useEffect(() => {
+    onPending?.(acceptedNotApplied)
+  }, [acceptedNotApplied, onPending])
 
   // contractId → table → proposals, in the order Cortex returned them.
   const groups = new Map<string, Map<string, Proposal[]>>()

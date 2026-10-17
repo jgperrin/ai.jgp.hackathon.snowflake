@@ -40,6 +40,8 @@ export function Wizard({ ref, onBrowseStore }: Props) {
   const [yamlError, setYamlError] = useState('')
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState('')
+  // Accepted but not yet applied, reported up by Analyze: Verify needs it to explain an empty run.
+  const [pendingAccepted, setPendingAccepted] = useState(0)
 
   /** Every change to the bundle goes through here so the YAML view never goes stale. */
   async function updateBundle(next: Bundle) {
@@ -120,10 +122,11 @@ export function Wizard({ ref, onBrowseStore }: Props) {
                 bundle={bundle}
                 onApplied={updateBundle}
                 onViewDocuments={() => setStep('generate')}
+                onPending={setPendingAccepted}
               />
             </div>
             <div hidden={step !== 'verify'}>
-              <VerifyStep key={generation} bundle={bundle} />
+              <VerifyStep key={generation} bundle={bundle} pendingAccepted={pendingAccepted} />
             </div>
             <div hidden={step !== 'publish'}>
               <PublishStep bundle={bundle} onLoad={replaceBundle} onBrowseStore={onBrowseStore} />

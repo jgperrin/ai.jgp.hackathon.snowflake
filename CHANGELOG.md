@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.43] - 2026-10-17
+
+### Fixed
+- Verify says why it has nothing to run (DIND#105). The report was "DQ rules are
+  not executed", and reproducing it against the deployed build showed the
+  pipeline is healthy end to end: Cortex proposes the rules, Apply puts them in
+  the contract, and all six ran on Snowflake. What the session actually had was
+  proposals accepted and never applied, and the step said only "Accept some DQ
+  rules in Analyze first" — which reads as if that had not been done. It now
+  names the case: "N accepted proposals are waiting in Analyze" versus having
+  accepted nothing at all. Analyze reports its accepted-but-unapplied count up
+  through the wizard so the two can be told apart.
+
 ## [0.10.42] - 2026-10-17
 
 ### Changed
