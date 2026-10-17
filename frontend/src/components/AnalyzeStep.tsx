@@ -21,12 +21,41 @@ interface Props {
 }
 
 const KIND_LABEL: Record<ProposalKind, string> = {
+  primaryKey: 'Primary key',
   description: 'Description',
   businessName: 'Business name',
   classification: 'Classification',
   tag: 'Tag',
   qualityRule: 'DQ rule',
   sla: 'SLA',
+}
+
+/**
+ * The order the review reads in, whatever order Cortex answered in: the things that describe a
+ * table, then the things that constrain it. A kind this list does not know about is appended
+ * after these, so a new proposal kind can never make its cards disappear.
+ */
+const SECTION_ORDER: ProposalKind[] = [
+  'primaryKey',
+  'description',
+  'businessName',
+  'classification',
+  'tag',
+  'qualityRule',
+  'sla',
+]
+
+interface Section {
+  kind: string
+  items: Proposal[]
+}
+
+/** One section per category, in SECTION_ORDER, then any kind that is not in it. */
+function sectionsOf(items: Proposal[]): Section[] {
+  const kinds = [...SECTION_ORDER, ...new Set(items.map((p) => p.kind as string))]
+  return [...new Set(kinds)]
+    .map((kind) => ({ kind, items: items.filter((p) => p.kind === kind) }))
+    .filter((section) => section.items.length > 0)
 }
 
 const isText = (kind: ProposalKind) => kind !== 'qualityRule' && kind !== 'sla'
@@ -198,19 +227,49 @@ export function AnalyzeStep({ bundle, onApplied, onViewDocuments }: Props) {
                     Reject all
                   </button>
                 </div>
-                <div className="proposal-grid">
-                  {items.map((p) => (
-                    <ProposalCard
-                      key={p.id}
-                      proposal={p}
-                      decision={decisions[p.id]}
-                      onAccept={() => decide([p.id], 'accepted')}
-                      onReject={() => decide([p.id], 'rejected')}
-                      onReset={() => decide([p.id], 'pending')}
-                      onSaveEdit={(value) => saveEdit(p.id, value)}
-                    />
-                  ))}
-                </div>
+                {sectionsOf(items).map((section) => {
+                  const pending = section.items
+                    .filter((p) => decisions[p.id]?.status !== 'applied')
+                    .map((p) => p.id)
+                  return (
+                    <section key={section.kind} className="kind-section">
+                      <div className="kind-section-head">
+                        <h4>{KIND_LABEL[section.kind as ProposalKind] ?? section.kind}</h4>
+                        <span className="muted">{section.items.length}</span>
+                        <span className="spacer" />
+                        <button
+                          type="button"
+                          className="btn-ok btn-small"
+                          disabled={pending.length === 0}
+                          onClick={() => decide(pending, 'accepted')}
+                        >
+                          Accept all
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-danger btn-small"
+                          disabled={pending.length === 0}
+                          onClick={() => decide(pending, 'rejected')}
+                        >
+                          Reject all
+                        </button>
+                      </div>
+                      <div className="proposal-grid">
+                        {section.items.map((p) => (
+                          <ProposalCard
+                            key={p.id}
+                            proposal={p}
+                            decision={decisions[p.id]}
+                            onAccept={() => decide([p.id], 'accepted')}
+                            onReject={() => decide([p.id], 'rejected')}
+                            onReset={() => decide([p.id], 'pending')}
+                            onSaveEdit={(value) => saveEdit(p.id, value)}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  )
+                })}
               </div>
             )
           })}

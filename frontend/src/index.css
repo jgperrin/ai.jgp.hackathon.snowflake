@@ -1252,6 +1252,29 @@ button:disabled {
   margin: 0;
 }
 
+/* One section per proposal category inside a table, so a bulk accept can be aimed at one kind. */
+.kind-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.kind-section-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.kind-section-head h4 {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: var(--heading);
+}
+
 .proposal-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
