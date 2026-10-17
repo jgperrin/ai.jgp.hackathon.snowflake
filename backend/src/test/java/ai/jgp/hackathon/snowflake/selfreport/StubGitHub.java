@@ -16,7 +16,7 @@ import com.sun.net.httpserver.HttpServer;
  */
 final class StubGitHub implements AutoCloseable {
 
-    static final String ISSUE_URL = "https://github.com/jgperrin/ai.jgp.hackathon.snowflake/issues/4242";
+    static final String ISSUE_URL = "https://github.com/jgperrin/ai.jgp.snowflakecontextbuilder/issues/4242";
 
     private final HttpServer server;
     final List<String> requests = new CopyOnWriteArrayList<>();
