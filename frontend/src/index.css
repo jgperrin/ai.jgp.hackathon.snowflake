@@ -1221,6 +1221,52 @@ button:disabled {
   padding: 0.6rem 1rem;
 }
 
+/* Category filter over the review: pills that toggle a category on and off. */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+}
+
+.filter-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.filter-pill {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.33;
+  padding: 0.15rem 0.6rem;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  background: var(--canvas);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+.filter-pill:hover {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.filter-pill.is-on {
+  background: var(--accent-soft);
+  color: var(--accent-on-soft);
+  box-shadow: inset 0 0 0 1px var(--accent-soft-border);
+}
+
+.filter-pill:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .contract-group {
   display: flex;
   flex-direction: column;
