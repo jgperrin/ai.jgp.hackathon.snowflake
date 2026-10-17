@@ -8,13 +8,15 @@ interface Props {
   /** Loads a save into the wizard (and shows it); rejects with the reason it could not. */
   onOpen: (saveId: string) => Promise<void>
   onBack: () => void
+  /** A save id from the URL (/store/<id>), opened on arrival (DIND#101). */
+  openId?: string
 }
 
 const KIND_LABEL: Record<string, string> = { ODPS: 'ODPS product', ODCS: 'ODCS contract', OSI: 'OSI model' }
 const EXTENSION: Record<string, string> = { ODPS: 'odps', ODCS: 'odcs', OSI: 'osi' }
 
 /** Everything saved in Snowflake: one row per save, expandable to its artifacts and their stored YAML. */
-export function StoreView({ onOpen, onBack }: Props) {
+export function StoreView({ onOpen, onBack, openId = '' }: Props) {
   const [saves, setSaves] = useState<SavedSave[] | null>(null)
   const [database, setDatabase] = useState<string | null>(null)
   const [expanded, setExpanded] = useState('')
@@ -61,6 +63,23 @@ export function StoreView({ onOpen, onBack }: Props) {
       () => setDatabase(null),
     )
   }, [load])
+
+  // A save id in the URL opens that save. A bad one is reported here and leaves the user in the
+  // store, which is what the reader of that link needs to know (DIND#101).
+  useEffect(() => {
+    if (!openId) {
+      return
+    }
+    let live = true
+    onOpen(openId).catch((cause: unknown) => {
+      if (live) {
+        setError(messageOf(cause))
+      }
+    })
+    return () => {
+      live = false
+    }
+  }, [openId, onOpen])
 
   async function toggle(saveId: string) {
     if (expanded === saveId) {

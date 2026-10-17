@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { BrowserRouter, Link, useLocation, useNavigate } from 'react-router-dom'
 import { ApiError, MOCK, api, onSessionEvent } from './api'
 import type { SessionUser } from './api'
 import { AppearanceToggle } from './components/AppearanceToggle'
@@ -25,11 +26,39 @@ type ConnectionState = boolean | null
 const NOT_CONNECTED_YET = 'No Snowflake connection is saved for your profile yet.'
 
 /**
+ * The base path this app is served under, in the form react-router wants it: no trailing slash.
+ * `import.meta.env.BASE_URL` is `/contextbuilder/` in a build and `/` in dev, so this is
+ * `/contextbuilder` and `''` — an empty basename is what react-router expects at the root, and it
+ * is what keeps one build working under either prefix (DIND#106).
+ */
+const BASENAME = import.meta.env.BASE_URL.replace(/\/$/, '')
+
+/** Which view a path belongs to. The wizard is everything that is not one of the other two. */
+type View = 'wizard' | 'store' | 'about'
+
+function viewOf(pathname: string): View {
+  if (pathname === '/store' || pathname.startsWith('/store/')) return 'store'
+  return pathname === '/about' ? 'about' : 'wizard'
+}
+
+function pathOf(view: View): string {
+  return view === 'wizard' ? '/' : `/${view}`
+}
+
+/**
  * The shell: sign-in gate, header with the signed-in user and the Snowflake
  * connection panel, then the wizard. Global API events (401, 409 NO_CONNECTION)
  * land here so no step has to handle them.
  */
 export default function App() {
+  return (
+    <BrowserRouter basename={BASENAME}>
+      <Shell />
+    </BrowserRouter>
+  )
+}
+
+function Shell() {
   const [user, setUser] = useState<Session>(undefined)
   const [connected, setConnected] = useState<ConnectionState>(null)
   // True when no connection profile is saved at all (the menu says "Needs setup" rather than "Not connected").
@@ -42,7 +71,16 @@ export default function App() {
   const [backendUp, setBackendUp] = useState(true)
   // The store view sits over the wizard, which stays mounted (hidden) so a visit costs it nothing.
   // About (DIND#82) is the same kind of overlay: the wizard underneath keeps its state.
-  const [view, setView] = useState<'wizard' | 'store' | 'about'>('wizard')
+  //
+  // Which of the three is showing comes from the URL, not from state (DIND#101): that is what makes
+  // a view linkable, reloadable and reachable with Back. The wizard's own step is a path segment
+  // too, read in Wizard.
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const view = viewOf(pathname)
+  const setView = (next: View) => void navigate(pathOf(next))
+  // /store/<saveId> is a shareable link to a saved product; StoreView opens it on arrival.
+  const storeSaveId = pathname.startsWith('/store/') ? pathname.slice('/store/'.length) : ''
   const wizard = useRef<WizardHandle>(null)
 
   useEffect(() => {
@@ -67,12 +105,12 @@ export default function App() {
           setUser(null)
           setConnected(null)
           setPanel(null)
-          setView('wizard')
+          void navigate('/')
         } else {
           setPanel(event.message || NOT_CONNECTED_YET)
         }
       }),
-    [],
+    [navigate],
   )
 
   // Once signed in, find out whether there is a connection. A saved or seeded profile opens on first use,
@@ -129,13 +167,17 @@ export default function App() {
     setView('wizard')
   }
 
-  /** Open on a save: load it into the wizard, then go back to it. */
-  async function openSave(saveId: string) {
-    const bundle = await api.getProduct(saveId)
-    if (!wizard.current) throw new Error('Connect to Snowflake first to open a save in the wizard.')
-    await wizard.current.load(bundle)
-    setView('wizard')
-  }
+  /** Open on a save: load it into the wizard, then show it — where a loaded bundle lands. */
+  // Stable identity, so the store's deep-link effect does not re-fire on every render.
+  const openSave = useCallback(
+    async (saveId: string) => {
+      const bundle = await api.getProduct(saveId)
+      if (!wizard.current) throw new Error('Connect to Snowflake first to open a save in the wizard.')
+      await wizard.current.load(bundle)
+      void navigate('/generate')
+    },
+    [navigate],
+  )
 
   const connectionStatus: ConnectionStatus =
     connected === null ? null : connected ? 'connected' : needsSetup ? 'needs-setup' : 'not-connected'
@@ -171,23 +213,23 @@ export default function App() {
       <header className="topnav">
         <div className="topnav-inner">
           {/* The brand is the "back to start" link (ops/ux parity: hover colours the name). */}
-          <a className="topnav-brand" href={import.meta.env.BASE_URL} title="Back to start">
+          <Link className="topnav-brand" to="/" title="Back to start">
             <BrandMark />
             <span className="brand-name">Context Builder</span>
             <span className="brand-badge">v{__APP_VERSION__}</span>
-          </a>
+          </Link>
           <span className="spacer" />
           <div className="account">
             <AppearanceToggle />
             <HelpButton user={user.username} connected={connected} />
-            <button
-              type="button"
+            {/* A real link, so it can be middle-clicked and shared (DIND#101). */}
+            <Link
               className={view === 'store' ? 'btn-secondary is-active' : 'btn-secondary'}
-              aria-pressed={view === 'store'}
-              onClick={() => setView('store')}
+              aria-current={view === 'store' ? 'page' : undefined}
+              to="/store"
             >
               Saved in Snowflake
-            </button>
+            </Link>
             {/* Rightmost (DIND#69): the Snowflake connection and Sign out live in the profile menu. */}
             <ProfileMenu
               username={user.username}
@@ -208,13 +250,17 @@ export default function App() {
       >
         {view === 'about' && (
           <div className="about-pane">
-            <AboutView onBack={() => setView('wizard')} />
-          </div>
+            <AboutView onBack={() => setView('wizard')} />          </div>
         )}
         {view === 'store' && (
           <div className="store-pane">
             {/* Remounted when the connection changes, so saving one reloads the store it points at. */}
-            <StoreView key={String(connected)} onOpen={openSave} onBack={() => setView('wizard')} />
+            <StoreView
+              key={String(connected)}
+              openId={storeSaveId}
+              onOpen={openSave}
+              onBack={() => setView('wizard')}
+            />
           </div>
         )}
         <div className="page-header">
