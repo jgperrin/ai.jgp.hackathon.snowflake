@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.46] - 2026-10-17
+
+### Added
+- Every view and wizard step has its own URL (DIND#101): `/source`, `/generate`,
+  `/analyze`, `/verify`, `/publish`, `/store`, `/store/<saveId>` and `/about`, all
+  built from the app's base path so one build serves any prefix. Back and Forward
+  move between them, a reload keeps its step, and the stepper, the brand, the
+  "Saved in Snowflake" button and the Next button are real links — middle-click
+  and open-in-new-tab work. A step URL with no product in memory (a reload, or a
+  link someone pasted) lands on Source and says why rather than showing an empty
+  step, and `/store/<saveId>` opens that save in the wizard while a bad id leaves
+  the reader in the store with the reason. No server change was needed: the nginx
+  SPA fallback already serves `index.html` for any path under the prefix.
+- `react-router-dom`, the app's first runtime dependency beyond React. It is used
+  for the base-path-aware links and history, not for route-driven rendering — the
+  steps stay mounted, because the bundle lives in memory and unmounting would
+  throw it away. The bundle grows from 89 kB to 103 kB gzipped.
+
 ## [0.10.45] - 2026-10-17
 
 ### Fixed
