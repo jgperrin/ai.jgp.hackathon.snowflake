@@ -527,6 +527,13 @@ const dataApi: DataApi = {
     if (!hit) throw new ApiError(400, `No saved product ${id}`)
     return clone(hit.artifacts)
   },
+  async deleteSave(id) {
+    await sleep(300)
+    const index = saves.findIndex((s) => s.save.saveId === id)
+    if (index < 0) throw new ApiError(400, `No saved product ${id}`)
+    const [removed] = saves.splice(index, 1)
+    return { saveId: id, rows: removed.artifacts.length }
+  },
   async exportOsi(bundle) {
     await sleep(600)
     const doc = {

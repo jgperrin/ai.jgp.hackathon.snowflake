@@ -4,7 +4,7 @@ import type { Api, Bundle, EnrichResponse } from './types'
 
 export { ApiError } from './errors'
 
-type Method = 'GET' | 'POST' | 'PUT'
+type Method = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
 async function send(method: Method, path: string, body?: unknown): Promise<Response> {
   let response: Response
@@ -165,5 +165,6 @@ export const httpApi: Api = {
   getProduct: (id) => request('GET', `${API}/products/${enc(id)}`),
   listSaves: () => request('GET', `${API}/products/saves`),
   getSaveArtifacts: (id) => request('GET', `${API}/products/${enc(id)}/artifacts`),
+  deleteSave: (id) => request('DELETE', `${API}/products/${enc(id)}`),
   exportOsi: (bundle) => request('POST', `${API}/export/osi`, bundleBody(bundle)),
 }

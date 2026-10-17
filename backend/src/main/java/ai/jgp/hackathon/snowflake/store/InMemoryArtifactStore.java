@@ -62,4 +62,10 @@ class InMemoryArtifactStore implements ArtifactStore {
         Save save = saves.get(saveId);
         return save == null ? List.of() : save.artifacts();
     }
+
+    @Override
+    public int delete(String saveId) {
+        Save removed = saves.remove(saveId);
+        return removed == null ? 0 : removed.artifacts().size();
+    }
 }
