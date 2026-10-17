@@ -4,6 +4,7 @@ import type { Bundle, Proposal, ProposalKind } from '../api'
 import { messageOf } from '../lib/util'
 import { useElapsed } from '../lib/useElapsed'
 import { ErrorBanner, Spinner } from './common'
+import { RuleEditor } from './RuleEditor'
 
 type Status = 'pending' | 'accepted' | 'rejected' | 'applied'
 
@@ -356,16 +357,18 @@ interface CardProps {
 }
 
 function ProposalCard({ proposal, decision, onAccept, onReject, onReset, onSaveEdit }: CardProps) {
-  const [editing, setEditing] = useState(false)
+  // DQ rules and SLAs open in a form; text values and the escape hatch use the raw textarea.
+  const [editing, setEditing] = useState<'none' | 'form' | 'json'>('none')
   const [draft, setDraft] = useState('')
   const [draftError, setDraftError] = useState('')
   const status = decision?.status ?? 'pending'
   const value = decision?.value ?? proposal.value
+  const isRule = proposal.kind === 'qualityRule' || proposal.kind === 'sla'
 
   function startEdit() {
     setDraft(formatValue(value))
     setDraftError('')
-    setEditing(true)
+    setEditing(isRule ? 'form' : 'json')
   }
 
   function commitEdit() {
@@ -388,7 +391,7 @@ function ProposalCard({ proposal, decision, onAccept, onReject, onReset, onSaveE
         return
       }
     }
-    setEditing(false)
+    setEditing('none')
   }
 
   return (
@@ -401,7 +404,23 @@ function ProposalCard({ proposal, decision, onAccept, onReject, onReset, onSaveE
         {status !== 'pending' && <span className={`status status-${status}`}>{status}</span>}
       </header>
 
-      {editing ? (
+      {editing === 'form' ? (
+        <RuleEditor
+          kind={proposal.kind === 'sla' ? 'sla' : 'qualityRule'}
+          value={value}
+          onSave={(next) => {
+            onSaveEdit(next)
+            setEditing('none')
+          }}
+          onCancel={() => setEditing('none')}
+          // The escape hatch starts from the stored value, not from half-typed form fields.
+          onRawJson={() => {
+            setDraft(formatValue(value))
+            setDraftError('')
+            setEditing('json')
+          }}
+        />
+      ) : editing === 'json' ? (
         <div className="proposal-edit">
           {isText(proposal.kind) ? (
             <textarea rows={proposal.kind === 'description' ? 3 : 1} value={draft} onChange={(e) => setDraft(e.target.value)} autoFocus />
@@ -413,9 +432,14 @@ function ProposalCard({ proposal, decision, onAccept, onReject, onReset, onSaveE
             <button type="button" className="btn-ok btn-small" onClick={commitEdit}>
               Save &amp; accept
             </button>
-            <button type="button" className="btn-ghost btn-small" onClick={() => setEditing(false)}>
+            <button type="button" className="btn-ghost btn-small" onClick={() => setEditing('none')}>
               Cancel
             </button>
+            {isRule && (
+              <button type="button" className="btn-ghost btn-small" onClick={() => setEditing('form')}>
+                Edit as a form
+              </button>
+            )}
           </div>
         </div>
       ) : (
@@ -426,7 +450,7 @@ function ProposalCard({ proposal, decision, onAccept, onReject, onReset, onSaveE
         <span aria-hidden="true">✦</span> {proposal.rationale}
       </p>
 
-      {!editing && status !== 'applied' && (
+      {editing === 'none' && status !== 'applied' && (
         <footer className="actions">
           {status === 'pending' ? (
             <>

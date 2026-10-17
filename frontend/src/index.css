@@ -1267,6 +1267,32 @@ button:disabled {
   outline-offset: 1px;
 }
 
+/* The DQ rule / SLA form inside a proposal card (DIND#104): fields stack, the short ones share a row. */
+.rule-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.rule-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.rule-row > .form-field {
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+.rule-form .field-label {
+  margin-bottom: 0.25rem;
+}
+
+.rule-form .field-error {
+  margin: 0;
+}
+
 /* Delete is irreversible, so the confirmation says what goes and offers a way out. */
 .store-confirm td {
   background: var(--danger-bg);
