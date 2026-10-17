@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.39] - 2026-10-16
+
+### Changed
+- The Cortex review is grouped by category (DIND#102): inside each table, one
+  section per proposal kind in a fixed order — Primary key, Description, Business
+  name, Classification, Tag, DQ rule, SLA — each headed by its name and count and
+  carrying its own Accept all / Reject all. A bulk accept can now be aimed at one
+  kind instead of sweeping in the DQ rules and SLAs nobody has read yet. The
+  per-table Accept all / Reject all stay, and a kind the fixed order does not know
+  is appended after it rather than dropped, so a new proposal kind cannot make its
+  cards disappear.
+
+### Fixed
+- `ProposalKind` gains `primaryKey` (DIND#102): the backend has always sent those
+  proposals, and the type did not admit them, so the cards fell back to rendering
+  the raw kind string.
+
 ## [0.10.38] - 2026-10-16
 
 ### Added
