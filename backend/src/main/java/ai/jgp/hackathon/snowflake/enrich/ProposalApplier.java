@@ -61,6 +61,20 @@ public final class ProposalApplier {
                     }
                     list(target, "quality").add(rule);
                 }
+                case Proposal.CONTEXT -> {
+                    // Both standards put context on a table or above it, never on a column.
+                    if (p.column() != null) {
+                        throw new IllegalArgumentException("Context applies to a table, not a column");
+                    }
+                    if (!(p.value() instanceof Map<?, ?> raw)) {
+                        throw new IllegalArgumentException("Context must be an object");
+                    }
+                    Map<String, Object> block = ContextBlocks.sanitize(raw);
+                    if (block == null) {
+                        throw new IllegalArgumentException("Context block is empty");
+                    }
+                    target.put("context", block);
+                }
                 default -> throw new IllegalArgumentException("Unknown proposal kind " + p.kind());
             }
         }

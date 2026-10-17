@@ -31,12 +31,14 @@ const KIND_LABEL: Record<ProposalKind, string> = {
   tag: 'Tag',
   qualityRule: 'DQ rule',
   sla: 'SLA',
+  context: 'Context for AI',
 }
 
 /**
  * The order the review reads in, whatever order Cortex answered in: the things that describe a
- * table, then the things that constrain it. A kind this list does not know about is appended
- * after these, so a new proposal kind can never make its cards disappear.
+ * table, then the things that constrain it, then the guidance written for the agents that will read
+ * it. A kind this list does not know about is appended after these, so a new proposal kind can never
+ * make its cards disappear.
  */
 const SECTION_ORDER: ProposalKind[] = [
   'primaryKey',
@@ -46,6 +48,7 @@ const SECTION_ORDER: ProposalKind[] = [
   'tag',
   'qualityRule',
   'sla',
+  'context',
 ]
 
 interface Section {
@@ -363,12 +366,13 @@ function ProposalCard({ proposal, decision, onAccept, onReject, onReset, onSaveE
   const [draftError, setDraftError] = useState('')
   const status = decision?.status ?? 'pending'
   const value = decision?.value ?? proposal.value
-  const isRule = proposal.kind === 'qualityRule' || proposal.kind === 'sla'
+  // The three kinds whose value is an object get a form; everything else is text.
+  const formKind = proposal.kind === 'qualityRule' || proposal.kind === 'sla' || proposal.kind === 'context'
 
   function startEdit() {
     setDraft(formatValue(value))
     setDraftError('')
-    setEditing(isRule ? 'form' : 'json')
+    setEditing(formKind ? 'form' : 'json')
   }
 
   function commitEdit() {
@@ -406,7 +410,7 @@ function ProposalCard({ proposal, decision, onAccept, onReject, onReset, onSaveE
 
       {editing === 'form' ? (
         <RuleEditor
-          kind={proposal.kind === 'sla' ? 'sla' : 'qualityRule'}
+          kind={formKind ? (proposal.kind as 'qualityRule' | 'sla' | 'context') : 'qualityRule'}
           value={value}
           onSave={(next) => {
             onSaveEdit(next)
@@ -435,7 +439,7 @@ function ProposalCard({ proposal, decision, onAccept, onReject, onReset, onSaveE
             <button type="button" className="btn-ghost btn-small" onClick={() => setEditing('none')}>
               Cancel
             </button>
-            {isRule && (
+            {formKind && (
               <button type="button" className="btn-ghost btn-small" onClick={() => setEditing('form')}>
                 Edit as a form
               </button>
@@ -481,6 +485,35 @@ function ProposalCard({ proposal, decision, onAccept, onReject, onReset, onSaveE
 }
 
 function ProposalValue({ kind, value }: { kind: ProposalKind; value: unknown }) {
+  if (kind === 'context' && value && typeof value === 'object') {
+    const block = value as {
+      instructions?: string
+      verifiedStatements?: { question?: string; answer?: string }[]
+      constraints?: { constraint?: string }[]
+    }
+    return (
+      <div className="proposal-value">
+        {block.instructions && <p>{block.instructions}</p>}
+        {(block.verifiedStatements?.length ?? 0) > 0 && (
+          <ul className="context-read">
+            {block.verifiedStatements?.map((s, i) => (
+              <li key={i}>
+                {s.question}
+                {s.answer && <span className="muted"> → {s.answer}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+        {(block.constraints?.length ?? 0) > 0 && (
+          <ul className="context-read context-read-no">
+            {block.constraints?.map((c, i) => (
+              <li key={i}>{c.constraint}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+    )
+  }
   if (kind === 'qualityRule' && value && typeof value === 'object') {
     const rule = value as { type?: string; metric?: string; query?: string; mustBe?: unknown; description?: string }
     return (

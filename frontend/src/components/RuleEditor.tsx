@@ -14,14 +14,16 @@ import {
   slaOf,
 } from '../lib/ruleForm'
 import type { RuleForm, SlaForm } from '../lib/ruleForm'
+import { MAX_CONSTRAINTS, MAX_STATEMENTS, contextFormOf, contextOf } from '../lib/contextForm'
+import type { ContextForm } from '../lib/contextForm'
 
 /**
- * The editor a DQ rule or an SLA opens in (DIND#104). The form model lives in `lib/ruleForm`; this
- * file is only the markup.
+ * The editor a DQ rule, an SLA or an RFC-0038 context block opens in (DIND#104, DIND#109). The form
+ * models live in `lib/ruleForm` and `lib/contextForm`; this file is only the markup.
  */
 
 interface Props {
-  kind: 'qualityRule' | 'sla'
+  kind: 'qualityRule' | 'sla' | 'context'
   value: unknown
   onSave: (value: unknown) => void
   onCancel: () => void
@@ -29,8 +31,11 @@ interface Props {
   onRawJson: () => void
 }
 
-/** The editor a DQ rule or an SLA opens in. */
+/** The editor a DQ rule, an SLA or a context block opens in. */
 export function RuleEditor({ kind, value, onSave, onCancel, onRawJson }: Props) {
+  if (kind === 'context') {
+    return <ContextEditor value={value} onSave={onSave} onCancel={onCancel} onRawJson={onRawJson} />
+  }
   return kind === 'sla' ? (
     <SlaEditor value={value} onSave={onSave} onCancel={onCancel} onRawJson={onRawJson} />
   ) : (
@@ -209,8 +214,7 @@ function QualityRuleEditor({ value, onSave, onCancel, onRawJson }: Omit<Props, '
   )
 }
 
-function SlaEditor({ value, onSave, onCancel, onRawJson }: Omit<Props, 'kind'>) {
-  const [form, setForm] = useState<SlaForm>(() => slaFormOf(value))
+function SlaEditor({ value, onSave, onCancel, onRawJson }: Omit<Props, 'kind'>) {  const [form, setForm] = useState<SlaForm>(() => slaFormOf(value))
   const [error, setError] = useState('')
   const set = <K extends keyof SlaForm>(key: K, next: SlaForm[K]) => setForm((prev) => ({ ...prev, [key]: next }))
 
@@ -257,6 +261,130 @@ function SlaEditor({ value, onSave, onCancel, onRawJson }: Omit<Props, 'kind'>) 
         <span className="field-label">Description</span>
         <input type="text" value={form.description} onChange={(e) => set('description', e.target.value)} />
       </label>
+      <Footer error={error} onCancel={onCancel} onRawJson={onRawJson} />
+    </form>
+  )
+}
+
+function ContextEditor({ value, onSave, onCancel, onRawJson }: Omit<Props, 'kind'>) {
+  const [form, setForm] = useState<ContextForm>(() => contextFormOf(value))
+  const [error, setError] = useState('')
+
+  function submit(event: FormEvent) {
+    event.preventDefault()
+    const built = contextOf(form)
+    if ('error' in built) {
+      setError(built.error)
+      return
+    }
+    onSave(built.context)
+  }
+
+  const setStatement = (index: number, key: 'question' | 'answer', text: string) =>
+    setForm((prev) => ({
+      ...prev,
+      statements: prev.statements.map((s, i) => (i === index ? { ...s, [key]: text } : s)),
+    }))
+
+  const setConstraint = (index: number, text: string) =>
+    setForm((prev) => ({
+      ...prev,
+      constraints: prev.constraints.map((c, i) => (i === index ? { constraint: text } : c)),
+    }))
+
+  return (
+    <form className="rule-form" onSubmit={submit}>
+      <label className="form-field">
+        <span className="field-label">
+          Instructions
+          <span className="hint">
+            How an AI agent should use this table. It travels to the contract as a scoped system prompt.
+          </span>
+        </span>
+        <textarea
+          rows={3}
+          value={form.instructions}
+          onChange={(e) => setForm((prev) => ({ ...prev, instructions: e.target.value }))}
+        />
+      </label>
+
+      <div className="context-list">
+        <span className="field-label">
+          Questions this table answers
+          <span className="hint">
+            Up to {MAX_STATEMENTS}. Give an answer only where the profile actually supports one.
+          </span>
+        </span>
+        {form.statements.map((statement, i) => (
+          <div key={i} className="context-row">
+            <input
+              type="text"
+              placeholder="Canonical question"
+              value={statement.question}
+              onChange={(e) => setStatement(i, 'question', e.target.value)}
+            />
+            <input
+              type="text"
+              placeholder="Answer, optional"
+              value={statement.answer}
+              onChange={(e) => setStatement(i, 'answer', e.target.value)}
+            />
+            <button
+              type="button"
+              className="btn-ghost btn-small"
+              onClick={() => setForm((prev) => ({ ...prev, statements: prev.statements.filter((_, j) => j !== i) }))}
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          className="btn-secondary btn-small"
+          disabled={form.statements.length >= MAX_STATEMENTS}
+          onClick={() =>
+            setForm((prev) => ({ ...prev, statements: [...prev.statements, { question: '', answer: '' }] }))
+          }
+        >
+          Add a question
+        </button>
+      </div>
+
+      <div className="context-list">
+        <span className="field-label">
+          What it must not do
+          <span className="hint">
+            Up to {MAX_CONSTRAINTS}. Negative guidance: personal data to leave alone, totals that must not be summed,
+            joins that mean nothing.
+          </span>
+        </span>
+        {form.constraints.map((constraint, i) => (
+          <div key={i} className="context-row">
+            <input
+              type="text"
+              placeholder="Constraint"
+              value={constraint.constraint}
+              onChange={(e) => setConstraint(i, e.target.value)}
+            />
+            <button
+              type="button"
+              className="btn-ghost btn-small"
+              onClick={() => setForm((prev) => ({ ...prev, constraints: prev.constraints.filter((_, j) => j !== i) }))}
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          className="btn-secondary btn-small"
+          disabled={form.constraints.length >= MAX_CONSTRAINTS}
+          onClick={() => setForm((prev) => ({ ...prev, constraints: [...prev.constraints, { constraint: '' }] }))}
+        >
+          Add a constraint
+        </button>
+      </div>
+
       <Footer error={error} onCancel={onCancel} onRawJson={onRawJson} />
     </form>
   )

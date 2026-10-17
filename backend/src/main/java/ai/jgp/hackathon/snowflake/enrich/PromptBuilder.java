@@ -42,13 +42,21 @@ final class PromptBuilder {
                 - sla: 1 to 3 items: {"property": "freshness" | "latency" | "retention" | "frequency" | "availability",
                   "value": number or string, "unit": "d" | "h" | "m" | "y" (when relevant), "element": "TABLE.COLUMN"
                   (when relevant), "description": "...", "rationale": "..."}.
+                - context: guidance for AI agents reading THIS table (ODCS/ODPS RFC-0038), an object:
+                  {"instructions": "how an agent should use this table, at most 25 words",
+                   "verifiedStatements": [{"question": "a canonical business question this table answers",
+                     "answer": "the answer, only when the profile actually supports it"}],
+                   "constraints": [{"constraint": "what an agent must NOT do with this table, e.g. a column that
+                     is personal data, a total that must not be summed, a join that is meaningless"}]}
+                  Give 2 to 4 verifiedStatements and 1 to 3 constraints, all about this table's own columns.
 
                 Return ONLY a JSON object, no prose, no markdown fences:
                 {"table": {"description": "...", "businessName": "..."},
                  "columns": [{"name": "COL", "description": "...", "businessName": "...", "classification": "...",
                               "pii": false, "tags": ["..."]}],
                  "qualityRules": [...],
-                 "sla": [...]}
+                 "sla": [...],
+                 "context": {...}}
                 """.formatted(database, schema, table.table(), table.rowCount() == null ? "unknown" : table.rowCount(),
                 table.sampled() ? "sampled" : "full", table.sampleSize(), columns);
     }

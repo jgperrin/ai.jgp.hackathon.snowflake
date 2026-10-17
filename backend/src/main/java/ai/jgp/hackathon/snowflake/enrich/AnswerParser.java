@@ -111,6 +111,15 @@ final class AnswerParser {
                 }
             }
         }
+        if (root.get("context") instanceof Map<?, ?> raw) {
+            Map<String, Object> block = ContextBlocks.sanitize(raw);
+            if (block == null) {
+                warnings.add(table + ": ignored an empty context block.");
+            } else {
+                out.add(p(ids, contractId, table, null, Proposal.CONTEXT, block,
+                        text(raw.get("rationale")).orElse("Guidance for AI agents reading this table.")));
+            }
+        }
         return new Result(out, warnings);
     }
 
