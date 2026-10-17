@@ -134,6 +134,7 @@ export type ProposalKind =
   | 'tag'
   | 'qualityRule'
   | 'sla'
+  | 'context'
 
 export interface Proposal {
   id: string

@@ -105,7 +105,11 @@ public class EnrichService {
 
     public Bundle apply(Bundle bundle, List<Proposal> accepted) {
         List<Map<String, Object>> contracts = ProposalApplier.apply(bundle.contracts(), accepted);
-        return new Bundle(bundle.product(), contracts, validator.validate(bundle.product(), contracts));
+        // The accepted table blocks are the source; every level above them is composed from those,
+        // so nothing is composed twice and no level can disagree with the tables it covers (DIND#109).
+        contracts.forEach(ContextBlocks::composeContract);
+        Map<String, Object> product = ContextBlocks.composeProduct(bundle.product(), contracts);
+        return new Bundle(product, contracts, validator.validate(product, contracts));
     }
 
     /** A body that is not a bundle is the caller's mistake (400), not ours (500). */

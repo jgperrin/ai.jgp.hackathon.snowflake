@@ -33,6 +33,28 @@ class OsiExporterTest {
 
     @SuppressWarnings("unchecked")
     @Test
+    void carriesTheProductsContextAsAiContext() {
+        List<Map<String, Object>> contracts = contracts();
+        Map<String, Object> product = ContractGenerator.product("FINSERV_DW", contracts, Instant.EPOCH);
+        product.put("context", Map.of(
+                "instructions", "Use CUSTOMERS for customer-level questions.",
+                "verifiedStatements", List.of(Map.of("question", "How many customers?", "answer", "One per row.")),
+                "constraints", List.of(Map.of("constraint", "Never expose EMAIL."))));
+
+        Map<String, Object> model = OsiExporter.export(product, contracts);
+
+        Map<String, Object> ai = (Map<String, Object>) model.get("ai_context");
+        assertThat(String.valueOf(ai.get("instructions")))
+                .startsWith("Semantic model of FINSERV_DW data product.")
+                .contains("Use CUSTOMERS for customer-level questions.");
+        assertThat((List<String>) ai.get("examples")).containsExactly("How many customers?");
+        // Ossie has no slot for the constraints, and none is invented: the contracts carry them.
+        assertThat(ai).doesNotContainKey("constraints");
+        assertThat(validator.validateOsi(model)).isEmpty();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
     void exportValidatesAgainstOssieSchema() {
         List<Map<String, Object>> contracts = contracts();
         Map<String, Object> model = OsiExporter.export(ContractGenerator.product("FINSERV_DW", contracts, Instant.EPOCH),

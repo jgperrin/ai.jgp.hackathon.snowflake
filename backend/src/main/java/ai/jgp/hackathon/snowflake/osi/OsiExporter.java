@@ -49,9 +49,7 @@ public final class OsiExporter {
         if (product.get("description") instanceof Map<?, ?> d && d.get("purpose") instanceof String purpose) {
             model.put("description", purpose);
         }
-        model.put("ai_context", Map.of("instructions", "Semantic model of the " + product.get("name")
-                + " data product. Generated from its ODCS v3.2 data contracts, which remain the source of truth"
-                + " for schema, quality rules and SLAs."));
+        model.put("ai_context", aiContext(product));
         List<Map<String, Object>> datasets = new ArrayList<>();
         for (Source s : sources) {
             datasets.add(dataset(s, names.get(s)));
@@ -74,6 +72,43 @@ public final class OsiExporter {
             names.put(s, counts.get(table) > 1 ? lower(s.schema()) + "_" + table : table);
         }
         return names;
+    }
+
+    /**
+     * The product's RFC-0038 context in the shape Ossie has for it (DIND#109): its instructions, and
+     * its canonical questions as {@code examples}. Ossie's AIContext has no slot for the constraints,
+     * and none is invented for them — the contracts carry them and stay the source of truth.
+     */
+    static Map<String, Object> aiContext(Map<String, Object> product) {
+        Map<String, Object> ai = new LinkedHashMap<>();
+        ai.put("instructions", instructionsFor(product));
+        List<String> examples = questions(product);
+        if (!examples.isEmpty()) {
+            ai.put("examples", examples);
+        }
+        return ai;
+    }
+
+    private static String instructionsFor(Map<String, Object> product) {
+        // The product's name already says what it is since DIND#110 ("<Database> data product"), so
+        // this sentence must not add the noun a second time.
+        String base = "Semantic model of " + product.get("name") + ". Generated from its ODCS v3.2 data contracts,"
+                + " which remain the source of truth for schema, quality rules and SLAs.";
+        if (product.get("context") instanceof Map<?, ?> block
+                && block.get("instructions") instanceof String text && !text.isBlank()) {
+            return base + "\n\n" + text.strip();
+        }
+        return base;
+    }
+
+    private static List<String> questions(Map<String, Object> product) {
+        if (!(product.get("context") instanceof Map<?, ?> block)
+                || !(block.get("verifiedStatements") instanceof List<?> statements)) {
+            return List.of();
+        }
+        return statements.stream().filter(s -> s instanceof Map<?, ?> entry
+                && entry.get("question") instanceof String).map(s -> ((String) ((Map<?, ?>) s).get("question")).strip())
+                .toList();
     }
 
     static Map<String, Object> dataset(Source s, String name) {

@@ -20,9 +20,39 @@ class AnswerParserTest {
         return AnswerParser.parse("c1", "CLAIMS", COLUMNS, answer, new AtomicInteger());
     }
 
+    /** The RFC-0038 block arrives as its own proposal, table-level, cleaned (DIND#109). */
     @Test
-    void parsesFencedAnswerIntoProposals() {
-        String answer = "Here you go:\n```json\n" + """
+    @SuppressWarnings("unchecked")
+    void parsesAContextBlock() {
+        AnswerParser.Result r = parse("""
+                {"table": {"description": "Claims."},
+                 "context": {"instructions": "Use CLAIMS for policy questions.",
+                   "verifiedStatements": [{"question": "How many claims?", "answer": "One per policy."}],
+                   "constraints": [{"constraint": "Do not sum PREMIUM."}],
+                   "rationale": "Agents ask this first."}}
+                """);
+
+        assertThat(r.warnings()).isEmpty();
+        assertThat(r.proposals()).extracting(Proposal::kind).containsExactly("description", "context");
+        Proposal context = r.proposals().get(1);
+        assertThat(context.column()).isNull();
+        assertThat(context.rationale()).isEqualTo("Agents ask this first.");
+        Map<String, Object> block = (Map<String, Object>) context.value();
+        assertThat(block).containsEntry("instructions", "Use CLAIMS for policy questions.");
+        assertThat((java.util.List<Object>) block.get("verifiedStatements")).hasSize(1);
+    }
+
+    /** An empty block is not a proposal: it would put a `context: {}` on the table. */
+    @Test
+    void anEmptyContextBlockIsAWarningRatherThanAProposal() {
+        AnswerParser.Result r = parse("{\"table\": {}, \"context\": {\"instructions\": \"   \"}}");
+
+        assertThat(r.proposals()).extracting(Proposal::kind).doesNotContain("context");
+        assertThat(r.warnings()).anyMatch(w -> w.contains("empty context block"));
+    }
+
+    @Test
+    void parsesFencedAnswerIntoProposals() {        String answer = "Here you go:\n```json\n" + """
                 {"table": {"description": "Claims.", "businessName": "Claims"},
                  "columns": [{"name": "EMAIL", "description": "Contact email.", "classification": "Restricted",
                               "pii": true, "tags": ["Contact Info"]}],

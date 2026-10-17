@@ -1267,6 +1267,35 @@ button:disabled {
   outline-offset: 1px;
 }
 
+/* The context block reads as guidance: questions, then what the agent must not do. */
+.context-read {
+  margin: 0;
+  padding-left: 1.1rem;
+  list-style: disc;
+}
+
+.context-read-no {
+  list-style: circle;
+  color: var(--muted);
+}
+
+.context-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.context-row {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.context-row input {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 /* The DQ rule / SLA form inside a proposal card (DIND#104): fields stack, the short ones share a row. */
 .rule-form {
   display: flex;
