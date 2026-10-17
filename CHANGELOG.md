@@ -2,6 +2,21 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.41] - 2026-10-16
+
+### Added
+- A second instance, at `tools.actianlabs.com/contextbuilder-vnext` (DIND#106).
+  The frontend's base path is a build input (`VITE_BASE`; the default and every
+  existing build are unchanged), `deploy.sh` and `rollback.sh` take an instance
+  slug and port and derive the `/opt` directory, static directory, unit name,
+  public URL and Vite base from it, `deploy/systemd/contextbuilder-vnext.service`
+  and an nginx tenant for it are in the repo, and the sign-in cookie's name is a
+  setting (`AUTH_COOKIE_NAME`) because two instances on one host sharing
+  `cb_signin` would sign each other's users out.
+- The ops vhost mirrors are byte-identical again: the ops and CRM copies had
+  never received the `contextbuilder` tenant, so all three now carry both tenants
+  (the drift #75 recorded).
+
 ## [0.10.40] - 2026-10-16
 
 ### Added
