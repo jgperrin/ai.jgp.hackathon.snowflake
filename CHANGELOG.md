@@ -2,6 +2,32 @@
 
 All notable changes to this project are documented here. Backend and frontend versions move in lockstep.
 
+## [0.10.50] - 2026-10-18
+
+### Added
+
+- An Apache-2.0 `LICENSE` at the repository root, naming Actian Corporation as
+  the copyright holder, and a `NOTICE` for the three schemas the app bundles
+  (DIND#98). The decision was parked because two instructions in one session
+  pointed opposite ways — "add a proprietary license" and "apply an apache
+  license" — and JGP ruled **Apache-2.0** on 2026-10-18. GitHub reports the
+  licence on the repository page now, and the README says so in one line.
+
+- The `NOTICE` carries the upstream attribution the licence requires: ODCS
+  v3.2.0 and ODPS v1.1.0 from the Bitol project, and the Apache Ossie core
+  metadata schema 0.2.0.dev0 from the Apache Software Foundation. All three are
+  redistributed unmodified from `backend/src/main/resources/standards/`.
+
+### Changed
+
+- The footer said "© 2026 Actian Corporation. All rights reserved.", which
+  asserts the opposite of a permissive licence. It now says the code is
+  licensed under Apache-2.0, with a link to the file.
+
+- The About view's "Do not use for production; use at your own risk" stays: it
+  is a statement about the prototype, not a licence grant, and it agrees with
+  Apache-2.0 §7, which supplies the software **as is, without warranty**.
+
 ## [0.10.49] - 2026-10-17
 
 ### Changed
