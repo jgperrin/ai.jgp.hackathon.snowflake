@@ -99,11 +99,19 @@ export function Footer({ healthy }: { healthy: boolean }) {
               · DO NOT USE FOR PRODUCTION
             </p>
             <p className="footer-copy">
-              © {YEAR} Actian Corporation. All rights reserved. Prototype made with 💜 by the{' '}
+              © {YEAR} Actian Corporation, licensed under{' '}
+              <a
+                href="https://github.com/jgperrin/ai.jgp.snowflakecontextbuilder/blob/main/LICENSE"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Apache-2.0
+              </a>
+              . Prototype made with 💜 by the{' '}
               <a href="https://www.actian.com/company/leadership-team/" target="_blank" rel="noopener noreferrer">
                 Actian Office of the CTO
               </a>
-              . Use at your own risk.
+              . Do not use for production; provided as is, without warranty.
             </p>
           </div>
 

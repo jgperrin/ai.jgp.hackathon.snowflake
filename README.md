@@ -123,3 +123,7 @@ cd frontend && npm run lint && npm run build
 ## Deploy
 
 Manual, by design: see [`deploy/README.md`](deploy/README.md).
+
+## License
+
+Apache License 2.0 — see [`LICENSE`](LICENSE). The bundled third-party schemas keep their own upstream licenses; see [`NOTICE`](NOTICE).
